@@ -12,5 +12,8 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- Step 2: Create stored procedures (functions)
 \i db/functions/create_function_signup_user.sql
 \i db/functions/create_function_signin_user.sql
+\i db/functions/create_friendship.sql
+\i db/functions/send_friend_request.sql
+\i db/functions/update_friend_request.sql
 -- NOTE TO COLLABORATORS: Add more functions here as you create them
 
