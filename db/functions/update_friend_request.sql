@@ -10,7 +10,7 @@ BEGIN
     ) THEN
         -- Update the friend request status
         UPDATE friend_request
-        SET status = _status
+        SET status = _status, terminated_at = CURRENT_TIMESTAMP
         WHERE sender_id = sender_user_id AND receiver_id = receiver_user_id;
 
         -- If accepted, create the friendship

@@ -1,6 +1,5 @@
 -- Procedure to create friendship
 CREATE OR REPLACE PROCEDURE create_friendship(sender_user_id INTEGER, receiver_user_id INTEGER)
-LANGUAGE plpgsql
 AS $$
 DECLARE
     user_1 INTEGER;
