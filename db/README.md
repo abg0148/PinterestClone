@@ -34,4 +34,4 @@ This directory contains all database-related scripts for the Pinboard project â€
 
 ## Entity-Relationship Diagram
 
-![ER Diagram](db/diagrams/er_diagram.png)
+![ER Diagram](diagrams/er_diagram.png)
