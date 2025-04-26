@@ -32,3 +32,6 @@ This directory contains all database-related scripts for the Pinboard project â€
    psql -U <your_username> -d pinboard_db -f db/init_database.sql
    ```
 
+## Entity-Relationship Diagram
+
+![ER Diagram](db/diagrams/er_diagram.png)
