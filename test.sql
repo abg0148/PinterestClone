@@ -20,7 +20,7 @@ select update_profile(1, 'Alice Wonderland', 'Dreamer of dreams', null);
 select update_profile(1, 'Alex Wonderland', 'Dreamer of dreams', null);
 
 """Updating Profile - Not an Active User"""
-select update_profile(1, 'Alex Wonderland', 'Dreamer of dreams', null);
+select update_profile(10, 'Alex Wonderland', 'Dreamer of dreams', null);
 
 """Create Boards"""
 select create_board(1, 'Inspiration', 'Ideas worth pinning', false);
@@ -36,7 +36,7 @@ select create_post(1, 4, 'tech,code', NULL, NULL, NULL);
 select repin_post(2, 1);
 
 """Repin a pinned post"""
-select repin_post(3, 6);
+select repin_post(3, 3);
 
 """Send a Friend Request"""
 call send_friend_request(1, 4);
@@ -48,7 +48,11 @@ call update_friend_request(1, 'accepted');
 call send_friend_request(1, 4);
 
 """Declining a Request"""
+call send_friend_request(1, 5);
 call update_friend_request(2, 'declined');
+
+"""Request again to existing request"""
+call send_friend_request(4, 5);
 
 """Create a Follow Stream"""
 select create_follow_stream(1, 'My Inspiration Stream');
@@ -63,13 +67,13 @@ select like_pin(4, 1);
 select like_pin(4, 1);
 
 """Comment on a post that allows public comments"""
-select comment_on_pin(4, 6, 'comment1');
+select comment_on_pin(4, 3, 'comment1');
 
 """Comment on a post that doesn't allow public comments"""
-select comment_on_pin(4, 1, 'comment1');
+select comment_on_pin(4, 2, 'comment1');
 
 """Show post in reverse order"""
-select repin_post(1, 3);
+select repin_post(1, 2);
 SELECT
     p.id AS post_id,
     pin.board_id,
