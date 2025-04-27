@@ -2,8 +2,8 @@ CREATE OR REPLACE PROCEDURE update_friend_request(request_id INTEGER, _status VA
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    sender_id INTEGER;
-    receiver_id INTEGER;
+    _sender_id INTEGER;
+    _receiver_id INTEGER;
 BEGIN
     -- Check that status is only 'accepted' or 'declined'
     IF _status NOT IN ('accepted', 'declined') THEN
@@ -19,7 +19,7 @@ BEGIN
     ) THEN
         -- Fetch sender_id and receiver_id from the request
         SELECT sender_id, receiver_id
-        INTO sender_id, receiver_id
+        INTO _sender_id, _receiver_id
         FROM friend_request
         WHERE id = request_id;
 
@@ -30,7 +30,7 @@ BEGIN
 
         -- If accepted, create the friendship
         IF _status = 'accepted' THEN
-            CALL create_friendship(sender_id, receiver_id);
+            CALL create_friendship(_sender_id, _receiver_id);
         END IF;
     ELSE
         RAISE EXCEPTION 'Friend request does not exist or is already terminated';
