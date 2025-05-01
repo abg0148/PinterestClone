@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>{{board.board_name}}</h1>
+<p>{{board.description}}</p>
+
+{% if pins %}
+    <ul>
+        {% for pin, post in pins %}
+            <li>
+                <img src="{{ post.image_url }}" alt="Image" width="150"><br>
+                Tags: {{ post.tags }}<br>
+                Pinned at: {{ pin.created_at.strftime('%Y-%m-%d %H:%M') }}
+            </li>
+            <br>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No pins found for this board.</p>
+{% endif %}
+{% endblock %}

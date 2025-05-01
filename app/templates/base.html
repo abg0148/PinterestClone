@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}My App{% endblock %}</title>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav>
+        {% if current_user.is_authenticated %}
+            <span>Welcome, {{ current_user.username }}!</span> |
+            <a href="{{ url_for('dashboard.dashboard') }}">Dashboard</a> |
+            <a href="{{ url_for('profile.profile') }}">My Profile</a> |
+            <a href="{{ url_for('auth.logout') }}">Logout</a>
+        {% else %}
+            <a href="{{ url_for('auth.login') }}">Login</a> |
+            <a href="{{ url_for('auth.signup') }}">Sign Up</a>
+        {% endif %}
+    </nav>
+    <hr>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <p>{{ message }}</p>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- Page Content -->
+    {% block content %}{% endblock %}
+</body>
+</html>

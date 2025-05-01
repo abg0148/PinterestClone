@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Edit Board{% endblock %}
+{% block content %}
+<h2>Edit Board</h2>
+
+<form method="POST">
+    <label>Board Name:</label><br>
+    <input type="text" name="name" value="{{ board.board_name }}" required><br><br>
+
+    <label>Description:</label><br>
+    <textarea name="description">{{ board.description }}</textarea><br><br>
+
+    <label>
+        <input type="checkbox" name="allow_comments" {% if board.allow_public_comments %}checked{% endif %}>
+        Allow Public Comments
+    </label><br><br>
+
+    <input type="submit" value="Update Board">
+</form>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h2>Welcome, {{ user.username }}!</h2>
+
+<p><a href="{{ url_for('boards.create_board') }}">+ Create New Board</a> |
+<a href="{{ url_for('posts.create_post') }}">+ Create New Post</a></p>
+
+{% if boards %}
+    <h3>Your Boards</h3>
+    <ul>
+    {% for board in boards %}
+        <li>
+            <a href="{{ url_for('boards.view_board', board_id=board.id) }}">
+                <strong>{{ board.board_name }}</strong>
+            </a> —
+            <small>
+                {{ board.description or "No description" }},
+                {{ 'Public comments' if board.allow_public_comments else 'Friends only' }},
+                <a href="{{ url_for('boards.edit_board', board_id=board.id) }}">Edit</a>
+            </small>
+        </li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>You haven’t created any boards yet.</p>
+{% endif %}
+{% endblock %}
