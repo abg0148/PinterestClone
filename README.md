@@ -8,10 +8,16 @@ pip install -r requirements.txt
 createdb pinterest_clone_dev
 ```
 
+# generate a secret key like so in python
+```python
+import secrets
+secrets.token_hex(16)
+```
+
 # create a .env file like so in the home directory
 ```bash
 FLASK_ENV=development
-SECRET_KEY=c6c6917cdb05944b7e90beff1c8b0138
+SECRET_KEY=<generated-secret-key>
 DATABASE_URL=postgresql://<username>:<password>@localhost/pinterest_clone_dev
 ```
 
