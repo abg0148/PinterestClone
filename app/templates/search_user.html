@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}User List{% endblock %}
+
+{% block content %}
+<h2>Search Results</h2>
+
+<img src="{{ url_for('profile.profile_picture', user_id=user.id) }}" alt="Profile Picture" width="15" height="15"><br><br>
+
+<p><strong>Username:</strong> {{ user.username }}</p>
+<p><strong>Full Name:</strong> {{ user.full_name or '—' }}</p>
+
+<input type="submit" value="Add Friend" onclick="addFriend({{ current_user.id }}, {{ user.id }})">
+
+{% endblock %}

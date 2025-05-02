@@ -5,6 +5,7 @@ from .dashboard import dashboard_bp
 from .profile import profile_bp
 from .boards import boards_bp
 from .posts import posts_bp
+from .friends import friends_bp
 
 def init_routes(app):
     app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -12,6 +13,7 @@ def init_routes(app):
     app.register_blueprint(profile_bp)
     app.register_blueprint(boards_bp)
     app.register_blueprint(posts_bp)
+    app.register_blueprint(friends_bp)
 
     @app.after_request
     def add_no_cache_headers(response):
