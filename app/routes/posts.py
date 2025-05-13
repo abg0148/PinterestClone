@@ -13,19 +13,45 @@ def create_post():
     boards = Board.query.filter_by(user_id=current_user.id, terminated_at=None).all()
 
     if request.method == 'POST':
-        tags_raw = request.form['tags'].strip()
-        tags = ','.join(tag.strip() for tag in tags_raw.split() if ',' not in tag)
-
+        # Get form data
+        tags_raw = request.form.get('tags', '').strip()
+        board_id = request.form.get('board_id')
         image_url = request.form.get('image_url', '').strip() or None
         source_page = request.form.get('source_page', '').strip() or None
         image_blob = request.files.get('image_blob')
-        board_id = request.form.get('board_id')
 
-        if not tags or not board_id or not image_blob:
-            flash("Tags, board, and image are required.", "error")
+        # Validate required fields
+        if not tags_raw:
+            flash("Tags are required.", "error")
+            return render_template('create_post.html', boards=boards)
+        
+        if not board_id:
+            flash("Please select a board.", "error")
             return render_template('create_post.html', boards=boards)
 
-        # Generate fallback image_url if not provided
+        if not image_blob:
+            flash("Please upload an image.", "error")
+            return render_template('create_post.html', boards=boards)
+
+        # Process tags - split by comma and clean
+        tags = ','.join(tag.strip() for tag in tags_raw.split(',') if tag.strip())
+        
+        if not tags:  # If no valid tags after processing
+            flash("Please provide at least one valid tag.", "error")
+            return render_template('create_post.html', boards=boards)
+
+        # Validate board exists and belongs to user
+        board = Board.query.filter_by(id=board_id, user_id=current_user.id, terminated_at=None).first()
+        if not board:
+            flash("Invalid board selected.", "error")
+            return render_template('create_post.html', boards=boards)
+
+        # Validate image file
+        if not image_blob.filename:
+            flash("Invalid image file.", "error")
+            return render_template('create_post.html', boards=boards)
+
+        # Generate image URL if not provided
         if not image_url:
             generated_id = f"generated-{uuid.uuid4()}"
             final_image_url = f"/media/{generated_id}"
@@ -55,11 +81,12 @@ def create_post():
 
             db.session.commit()
             flash("Post created and pinned successfully!", "success")
-            return redirect(url_for('dashboard.dashboard'))
+            return redirect(url_for('boards.view_board', board_id=board_id))
         except Exception as e:
             db.session.rollback()
             flash("Something went wrong while creating the post.", "error")
-            print(e)
+            print(f"Error creating post: {str(e)}")
+            return render_template('create_post.html', boards=boards)
 
     return render_template('create_post.html', boards=boards)
 

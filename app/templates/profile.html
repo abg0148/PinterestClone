@@ -1,17 +1,98 @@
 {% extends "base.html" %}
 
-{% block title %}My Profile{% endblock %}
+{% block title %}
+    {% if user.id == current_user.id %}
+        My Profile
+    {% else %}
+        {{ user.username }}'s Profile
+    {% endif %}
+{% endblock %}
 
 {% block content %}
-<h2>My Profile</h2>
+<h2>
+    {% if user.id == current_user.id %}
+        My Profile
+    {% else %}
+        {{ user.username }}'s Profile
+    {% endif %}
+</h2>
 
-<img src="{{ url_for('profile.profile_picture', user_id=user.id) }}" alt="Profile Picture" width="150" height="150"><br><br>
+<div class="profile-info">
+    <img src="{{ url_for('profile.profile_picture', user_id=user.id) }}" alt="Profile Picture" width="150" height="150"><br><br>
 
-<p><strong>Username:</strong> {{ user.username }}</p>
-<p><strong>Full Name:</strong> {{ user.full_name or '—' }}</p>
-<p><strong>Email:</strong> {{ user.email }}</p>
-<p><strong>Bio:</strong><br>{{ user.bio or 'No bio yet.' }}</p>
+    <p><strong>Username:</strong> {{ user.username }}</p>
+    <p><strong>Full Name:</strong> {{ user.full_name or '—' }}</p>
+    <p><strong>Email:</strong> {{ user.email }}</p>
+    <p><strong>Bio:</strong><br>{{ user.bio or 'No bio yet.' }}</p>
 
-<br>
-<a href="{{ url_for('profile.edit_profile') }}">Edit Profile</a>
+    <p>
+        <a href="{{ url_for('profile.view_friends', user_id=user.id) }}">
+            {% if user.id == current_user.id %}
+                My Friends
+            {% else %}
+                {{ user.username }}'s Friends
+            {% endif %}
+        </a>
+    </p>
+
+    {% if user.id != current_user.id %}
+        <div class="friend-actions">
+            {% if friendship_status == 'not_friends' %}
+                <form method="POST" action="{{ url_for('friends.add_friend') }}">
+                    <input type="hidden" name="target_id" value="{{ user.id }}">
+                    <button type="submit">Add Friend</button>
+                </form>
+            {% elif friendship_status == 'pending_sent' %}
+                <p>Friend request sent</p>
+            {% elif friendship_status == 'pending_received' %}
+                <form method="POST" action="{{ url_for('friends.friend_request_response') }}" style="display: inline;">
+                    <input type="hidden" name="from_id" value="{{ user.id }}">
+                    <input type="hidden" name="to_id" value="{{ current_user.id }}">
+                    <input type="hidden" name="response" value="accepted">
+                    <button type="submit">Accept Friend Request</button>
+                </form>
+                <form method="POST" action="{{ url_for('friends.friend_request_response') }}" style="display: inline;">
+                    <input type="hidden" name="from_id" value="{{ user.id }}">
+                    <input type="hidden" name="to_id" value="{{ current_user.id }}">
+                    <input type="hidden" name="response" value="declined">
+                    <button type="submit">Reject</button>
+                </form>
+            {% elif friendship_status == 'friends' %}
+                <p>You are friends</p>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<div class="boards-section">
+    <h3>
+        {% if user.id == current_user.id %}
+            My Boards
+        {% else %}
+            {{ user.username }}'s Boards
+        {% endif %}
+    </h3>
+
+    {% if boards %}
+        <ul class="boards-list">
+            {% for board in boards %}
+                <li>
+                    <a href="{{ url_for('boards.view_board', board_id=board.id) }}">
+                        <strong>{{ board.board_name }}</strong>
+                    </a>
+                    {% if board.description %} — {{ board.description }}{% endif %}
+                    <br>
+                    <small>
+                        {{ 'Public comments' if board.allow_public_comments else 'Friends only' }}
+                        {% if user.id == current_user.id %}
+                            | <a href="{{ url_for('boards.edit_board', board_id=board.id) }}">Edit</a>
+                        {% endif %}
+                    </small>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No boards created yet.</p>
+    {% endif %}
+</div>
 {% endblock %}

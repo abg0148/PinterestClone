@@ -1,6 +1,8 @@
 import click
 from flask import current_app
 import psycopg2
+from flask.cli import with_appcontext
+from app.routes.auth import create_default_boards_for_existing_users
 
 @click.command('init-db')
 def init_db_command():
@@ -15,3 +17,12 @@ def init_db_command():
 
 def init_app(app):
     app.cli.add_command(init_db_command)
+
+def init_cli(app):
+    @app.cli.command('create-default-boards')
+    @with_appcontext
+    def create_default_boards():
+        """Create default 'Unorganized Ideas' boards for all existing users."""
+        click.echo('Creating default boards for existing users...')
+        create_default_boards_for_existing_users()
+        click.echo('Done!')

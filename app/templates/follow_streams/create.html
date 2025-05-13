@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Create Follow Stream{% endblock %}
+
+{% block content %}
+<h2>Create Follow Stream</h2>
+
+<form method="POST">
+    <p>
+        <label for="stream_name">Stream Name:</label><br>
+        <input type="text" id="stream_name" name="stream_name" required>
+    </p>
+    <p>
+        <input type="submit" value="Create Stream">
+    </p>
+</form>
+
+<p><a href="{{ url_for('follow_streams.list_streams') }}">Back to Streams</a></p>
+{% endblock %} 

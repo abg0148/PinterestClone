@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Search Results{% endblock %}
+
+{% block content %}
+<h2>Search Results for "{{ search_term }}"</h2>
+
+<!-- Users Section -->
+<h3>Users</h3>
+{% if users %}
+    {% if search_type == "partial" %}
+        <p>No exact username matches found. Showing similar usernames:</p>
+    {% endif %}
+    <ul>
+        {% for user in users %}
+        <li>
+            <strong><a href="{{ url_for('profile.view_profile', user_id=user.id) }}">{{ user.username }}</a></strong> ({{ user.email }})
+        </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    {% if search_type == "partial" %}
+        <p>No usernames found containing "{{ search_term }}"</p>
+    {% else %}
+        <p>No exact username matches found for "{{ search_term }}"</p>
+    {% endif %}
+{% endif %}
+
+<!-- Posts Section -->
+<h3>Posts</h3>
+{% if posts %}
+    <ul>
+        {% for post, pin, board, user in posts %}
+        <li>
+            <img src="{{ post.image_url }}" alt="Post image" width="150"><br>
+            <strong>Tags:</strong> {{ post.tags }}<br>
+            <strong>Board:</strong> <a href="{{ url_for('boards.view_board', board_id=board.id) }}">{{ board.board_name }}</a><br>
+            <strong>Posted by:</strong> <a href="{{ url_for('profile.view_profile', user_id=user.id) }}">{{ user.username }}</a><br>
+            {% if post.source_page %}
+                <strong>Source:</strong> <a href="{{ post.source_page }}" target="_blank">Original</a><br>
+            {% endif %}
+            
+            <!-- Repin Form -->
+            {% if user.id != current_user.id %}
+                <form method="POST" action="{{ url_for('boards.repin') }}" style="margin-top: 10px;">
+                    <input type="hidden" name="post_id" value="{{ post.id }}">
+                    <input type="hidden" name="source_pin_id" value="{{ pin.id }}">
+                    <select name="board_id" required>
+                        <option value="">Select a board to pin to...</option>
+                        {% for user_board in current_user_boards %}
+                            <option value="{{ user_board.id }}">{{ user_board.board_name }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit">Repin</button>
+                </form>
+            {% endif %}
+        </li>
+        <br>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No posts found with tags containing "{{ search_term }}"</p>
+{% endif %}
+{% endblock %} 

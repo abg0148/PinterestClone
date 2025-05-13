@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}My Follow Streams{% endblock %}
+
+{% block content %}
+<h2>My Follow Streams</h2>
+
+<div class="actions">
+    <a href="{{ url_for('follow_streams.create_stream') }}">+ Create New Stream</a>
+</div>
+
+{% if streams %}
+    <ul>
+        {% for stream in streams %}
+            <li>
+                <a href="{{ url_for('follow_streams.view_stream', stream_id=stream.id) }}">{{ stream.stream_name }}</a>
+                - <a href="{{ url_for('follow_streams.edit_stream', stream_id=stream.id) }}">Edit</a>
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>You haven't created any follow streams yet.</p>
+{% endif %}
+{% endblock %} 

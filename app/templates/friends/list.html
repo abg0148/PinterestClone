@@ -18,7 +18,7 @@
         <form method="POST" action="{{ url_for('friends.friend_request_response') }}" style="display: inline;">
           <input type="hidden" name="from_id" value="{{ req.from_id }}">
           <input type="hidden" name="to_id" value="{{ current_user.id }}">
-          <input type="hidden" name="response" value="rejected">
+          <input type="hidden" name="response" value="declined">
           <button type="submit">Reject</button>
         </form>
       </li>

@@ -4,13 +4,80 @@
 <h1>{{board.board_name}}</h1>
 <p>{{board.description}}</p>
 
+{% if current_user.id != board.user_id %}
+    <form method="POST" action="{{ url_for('follow_streams.add_board_to_stream', board_id=board.id) }}">
+        <select name="stream_id" required>
+            <option value="">Add to stream...</option>
+            {% for stream in current_user_streams %}
+                <option value="{{ stream.id }}">{{ stream.stream_name }}</option>
+            {% endfor %}
+        </select>
+        <input type="submit" value="Add to Stream">
+    </form>
+{% endif %}
+
 {% if pins %}
     <ul>
         {% for pin, post in pins %}
             <li>
                 <img src="{{ post.image_url }}" alt="Image" width="150"><br>
-                Tags: {{ post.tags }}<br>
-                Pinned at: {{ pin.created_at.strftime('%Y-%m-%d %H:%M') }}
+                <strong>Tags:</strong> {{ post.tags }}<br>
+                <strong>Pinned at:</strong> {{ pin.created_at.strftime('%Y-%m-%d %H:%M') }}<br>
+                {% if post.source_page %}
+                    <strong>Source:</strong> <a href="{{ post.source_page }}" target="_blank">Original</a><br>
+                {% endif %}
+
+                <!-- Like Section -->
+                <div>
+                    <span>{{ post.likes.filter_by(terminated_at=None).count() }} likes</span>
+                    {% set user_liked = post.likes.filter_by(user_id=current_user.id, terminated_at=None).first() %}
+                    <form method="POST" action="{{ url_for('social.toggle_like', post_id=post.id) }}" style="display: inline;">
+                        <button type="submit">{% if user_liked %}Unlike{% else %}Like{% endif %}</button>
+                    </form>
+                </div>
+
+                <!-- Comments Section -->
+                <div>
+                    <h4>Comments</h4>
+                    {% if pin.comments.filter_by(deleted_at=None).count() > 0 %}
+                        <ul>
+                            {% for comment in pin.comments.filter_by(deleted_at=None).all() %}
+                                <li>
+                                    <strong>{{ comment.author.username }}</strong>: {{ comment.body }}
+                                    {% if comment.user_id == current_user.id or board.user_id == current_user.id %}
+                                        <form method="POST" action="{{ url_for('social.delete_comment', comment_id=comment.id) }}" style="display: inline;">
+                                            <button type="submit">Delete</button>
+                                        </form>
+                                    {% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p>No comments yet.</p>
+                    {% endif %}
+
+                    {% if board.allow_public_comments or board.user_id == current_user.id or current_user.is_friend_with(board.user_id) %}
+                        <form method="POST" action="{{ url_for('social.add_comment', pin_id=pin.id) }}">
+                            <input type="text" name="comment" placeholder="Add a comment..." required>
+                            <button type="submit">Post</button>
+                        </form>
+                    {% endif %}
+                </div>
+
+                <!-- Repin Form -->
+                {% if board.user_id != current_user.id %}
+                    <form method="POST" action="{{ url_for('boards.repin') }}">
+                        <input type="hidden" name="post_id" value="{{ post.id }}">
+                        <input type="hidden" name="source_pin_id" value="{{ pin.id }}">
+                        <select name="board_id" required>
+                            <option value="">Select a board to pin to...</option>
+                            {% for user_board in current_user_boards %}
+                                <option value="{{ user_board.id }}">{{ user_board.board_name }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit">Repin</button>
+                    </form>
+                {% endif %}
             </li>
             <br>
         {% endfor %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ stream.stream_name }}{% endblock %}
+
+{% block content %}
+<h2>Edit Stream</h2>
+
+<form method="POST">
+    <p>
+        <label for="stream_name">Stream Name:</label><br>
+        <input type="text" id="stream_name" name="stream_name" value="{{ stream.stream_name }}" required>
+        <input type="submit" value="Update Name">
+    </p>
+</form>
+
+<h3>Current Boards</h3>
+{% if current_boards %}
+    <ul>
+        {% for stream_board in current_boards %}
+            <li>
+                {{ stream_board.board.board_name }}
+                {% if stream_board.board.description %}
+                    - {{ stream_board.board.description }}
+                {% endif %}
+                <form method="POST" style="display: inline;">
+                    <input type="hidden" name="board_id" value="{{ stream_board.board_id }}">
+                    <input type="hidden" name="action" value="remove">
+                    <input type="submit" value="Remove">
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No boards in this stream yet.</p>
+{% endif %}
+{% endblock %} 

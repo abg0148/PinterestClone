@@ -17,8 +17,54 @@ class User(UserMixin, db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     terminated_at = db.Column(db.DateTime)
 
+    # Add relationships
+    comments = db.relationship('Comment', backref='author', lazy='dynamic')
+    likes = db.relationship('Like', backref='user', lazy='dynamic')
+
     def get_id(self):
         return str(self.id)
+
+    def is_friend_with(self, other_user_id):
+        """Check if this user is friends with another user."""
+        from sqlalchemy import or_, and_
+        
+        # Check both possible orderings of user IDs since we store them ordered
+        friendship = Friend.query.filter(
+            and_(
+                or_(
+                    and_(Friend.user_id_1 == min(self.id, other_user_id),
+                         Friend.user_id_2 == max(self.id, other_user_id)),
+                ),
+                Friend.terminated_at.is_(None)
+            )
+        ).first()
+        
+        return friendship is not None
+
+    def create_default_board(self):
+        """Create the default 'Unorganized Ideas' board for the user."""
+        default_board = Board.query.filter_by(
+            user_id=self.id,
+            board_name="Unorganized Ideas",
+            terminated_at=None
+        ).first()
+
+        if not default_board:
+            default_board = Board(
+                user_id=self.id,
+                board_name="Unorganized Ideas",
+                description="A place for your unorganized pins and ideas",
+                allow_public_comments=True
+            )
+            db.session.add(default_board)
+            try:
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                print(f"Error creating default board: {str(e)}")
+                raise
+
+        return default_board
 
 
 class Board(db.Model):
@@ -47,6 +93,11 @@ class Post(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     terminated_at = db.Column(db.DateTime)
 
+    # Add relationships
+    likes = db.relationship('Like', backref='post', lazy='dynamic')
+    pins = db.relationship('Pin', backref='post', lazy='dynamic')
+    author = db.relationship('User', backref='posts')
+
 
 class Pin(db.Model):
     __tablename__ = 'pin'
@@ -57,6 +108,10 @@ class Pin(db.Model):
     root_pin_id = db.Column(db.Integer, db.ForeignKey('pin.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     terminated_at = db.Column(db.DateTime)
+
+    # Add relationships
+    comments = db.relationship('Comment', backref='pin', lazy='dynamic')
+    board = db.relationship('Board', backref='pins')
 
     __table_args__ = (db.UniqueConstraint('board_id', 'post_id'),)
 
@@ -100,6 +155,10 @@ class Friend(db.Model):
     since = db.Column(db.DateTime, default=datetime.utcnow)
     terminated_at = db.Column(db.DateTime)
 
+    __table_args__ = (
+        db.CheckConstraint('user_id_1 < user_id_2', name='friend_check'),
+    )
+
 
 class FollowStream(db.Model):
     __tablename__ = 'follow_stream'
@@ -110,6 +169,10 @@ class FollowStream(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     terminated_at = db.Column(db.DateTime)
 
+    # Relationships
+    user = db.relationship('User', backref='follow_streams')
+    boards = db.relationship('Board', secondary='follow_stream_board')
+
 
 class FollowStreamBoard(db.Model):
     __tablename__ = 'follow_stream_board'
@@ -118,3 +181,7 @@ class FollowStreamBoard(db.Model):
     board_id = db.Column(db.Integer, db.ForeignKey('board.id'), primary_key=True)
     added_at = db.Column(db.DateTime, default=datetime.utcnow)
     deleted_at = db.Column(db.DateTime)
+
+    # Relationships
+    stream = db.relationship('FollowStream', backref='stream_boards')
+    board = db.relationship('Board', backref='stream_boards')

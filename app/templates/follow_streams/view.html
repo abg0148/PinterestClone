@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}{{ stream.stream_name }}{% endblock %}
+
+{% block content %}
+<h2>{{ stream.stream_name }}</h2>
+
+<p>
+    <a href="{{ url_for('follow_streams.edit_stream', stream_id=stream.id) }}">Edit Stream</a>
+</p>
+
+<h3>Boards in this stream:</h3>
+{% if stream_boards %}
+    <ul>
+        {% for stream_board in stream_boards %}
+            <li>
+                {{ stream_board.board.board_name }}
+                <form method="POST" action="{{ url_for('follow_streams.edit_stream', stream_id=stream.id) }}" style="display: inline;">
+                    <input type="hidden" name="board_id" value="{{ stream_board.board_id }}">
+                    <input type="hidden" name="action" value="remove">
+                    <input type="submit" value="Remove">
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No boards in this stream yet.</p>
+{% endif %}
+
+<h3>Recent Pins:</h3>
+{% if pins %}
+    <ul>
+        {% for pin, post, board in pins %}
+            <li>
+                <img src="{{ post.image_url }}" alt="Pin image" style="max-width: 200px"><br>
+                From board: {{ board.board_name }}<br>
+                {% if post.tags %}Tags: {{ post.tags }}{% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No pins found in the boards of this stream.</p>
+{% endif %}
+{% endblock %} 

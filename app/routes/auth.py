@@ -2,7 +2,7 @@ from werkzeug.security import generate_password_hash
 from app import db
 from sqlalchemy.exc import IntegrityError
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from flask_login import login_user, login_required
+from flask_login import login_user, login_required, logout_user
 from werkzeug.security import check_password_hash
 from app.models import User
 
@@ -20,6 +20,7 @@ def signup():
             flash("All fields are required.", "error")
         else:
             try:
+                # Create user
                 new_user = User(
                     username=username,
                     email=email,
@@ -27,6 +28,14 @@ def signup():
                 )
                 db.session.add(new_user)
                 db.session.commit()
+
+                # Create default board
+                try:
+                    new_user.create_default_board()
+                except Exception as e:
+                    flash("Account created but default board creation failed. Please try creating a board manually.", "warning")
+                    print(f"Default board creation error: {str(e)}")
+
                 login_user(new_user)
                 return redirect(url_for('dashboard.dashboard'))
             except IntegrityError:
@@ -56,7 +65,6 @@ def login():
 
     return render_template('login.html', error=error)
 
-from flask_login import logout_user
 
 @auth_bp.route('/logout')
 @login_required
@@ -64,4 +72,15 @@ def logout():
     logout_user()
     flash("You have been logged out.", "success")
     return redirect(url_for('auth.login'))
+
+
+# Create default boards for existing users
+def create_default_boards_for_existing_users():
+    """Utility function to create default boards for all existing users."""
+    users = User.query.filter_by(terminated_at=None).all()
+    for user in users:
+        try:
+            user.create_default_board()
+        except Exception as e:
+            print(f"Error creating default board for user {user.username}: {str(e)}")
 

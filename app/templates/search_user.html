@@ -10,6 +10,11 @@
 <p><strong>Username:</strong> {{ user.username }}</p>
 <p><strong>Full Name:</strong> {{ user.full_name or '—' }}</p>
 
-<input type="submit" value="Add Friend" onclick="addFriend({{ current_user.id }}, {{ user.id }})">
+<form method="POST" action="{{ url_for('friends.add_friend') }}">
+    <input type="hidden" name="target_id" value="{{ user.id }}">
+    <button type="submit">Add Friend</button>
+</form>
+
+<p><a href="{{ url_for('dashboard.dashboard') }}">Back to Dashboard</a></p>
 
 {% endblock %}

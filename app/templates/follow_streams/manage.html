@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Manage {{ stream.stream_name }}{% endblock %}
+
+{% block content %}
+<h2>{{ stream.stream_name }}</h2>
+
+<h3>Current Boards</h3>
+{% if current_boards %}
+    <ul>
+        {% for stream_board in current_boards %}
+            <li>
+                {{ stream_board.board.board_name }}
+                {% if stream_board.board.description %}
+                    - {{ stream_board.board.description }}
+                {% endif %}
+                <form method="POST" style="display: inline;">
+                    <input type="hidden" name="board_id" value="{{ stream_board.board_id }}">
+                    <input type="hidden" name="action" value="remove">
+                    <input type="submit" value="Remove">
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No boards in this stream yet.</p>
+{% endif %}
+
+<p><a href="{{ url_for('follow_streams.view_stream', stream_id=stream.id) }}">Back to Stream</a></p>
+{% endblock %} 

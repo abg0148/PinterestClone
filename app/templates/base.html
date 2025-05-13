@@ -12,16 +12,18 @@
             {% if request.endpoint and request.endpoint.startswith('profile.') %}
                 <!-- Profile page navbar -->
                 <a href="{{ url_for('dashboard.dashboard') }}">Dashboard</a> |
-                <a href="{{ url_for('profile.edit_profile', user_id=current_user.id) }}">Edit Profile</a> |
+                <a href="{{ url_for('profile.edit_profile') }}">Edit Profile</a> |
             {% else %}
                 <!-- Dashboard page navbar -->
                 <a href="{{ url_for('profile.profile_redirect') }}">My Profile</a> |
+                <a href="{{ url_for('follow_streams.list_streams') }}">My Streams</a> |
                 <a href="{{ url_for('friends.list_request') }}">Friend Requests</a> |
-                <form method="POST" action="{{ url_for('friends.search_user')}}" style="display: inline;">
-                    <input type="text" name="identifier" placeholder="Search users..." required>
-                    <button type="submit">Search</button>
-                </form> |
             {% endif %}
+
+            <form method="POST" action="{{ url_for('friends.search_user')}}" style="display: inline;">
+                <input type="text" name="identifier" placeholder="Search users..." required>
+                <button type="submit">Search</button>
+            </form> |
             
             <a href="{{ url_for('auth.logout') }}">Logout</a>
         {% else %}

@@ -8,13 +8,15 @@
   <ul>
     {% for friend in friends %}
       <li>
-        <strong>Username:</strong> {{ friend.username }}<br>
+        <strong>Username:</strong> <a href="{{ url_for('profile.view_profile', user_id=friend.id) }}">{{ friend.username }}</a><br>
         <strong>Email:</strong> {{ friend.email }}<br>
-        </li>
+      </li>
     {% endfor %}
   </ul>
 {% else %}
   <p>You have no friends yet.</p>
 {% endif %}
+
+<p><a href="{{ url_for('dashboard.dashboard') }}">Back to Dashboard</a></p>
 
 {% endblock %}
