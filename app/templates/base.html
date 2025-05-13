@@ -8,8 +8,21 @@
     <nav>
         {% if current_user.is_authenticated %}
             <span>Welcome, {{ current_user.username }}!</span> |
-            <a href="{{ url_for('dashboard.dashboard') }}">Dashboard</a> |
-            <a href="{{ url_for('profile.profile') }}">My Profile</a> |
+            
+            {% if request.endpoint and request.endpoint.startswith('profile.') %}
+                <!-- Profile page navbar -->
+                <a href="{{ url_for('dashboard.dashboard') }}">Dashboard</a> |
+                <a href="{{ url_for('profile.edit_profile', user_id=current_user.id) }}">Edit Profile</a> |
+            {% else %}
+                <!-- Dashboard page navbar -->
+                <a href="{{ url_for('profile.profile_redirect') }}">My Profile</a> |
+                <a href="{{ url_for('friends.list_request') }}">Friend Requests</a> |
+                <form method="POST" action="{{ url_for('friends.search_user')}}" style="display: inline;">
+                    <input type="text" name="identifier" placeholder="Search users..." required>
+                    <button type="submit">Search</button>
+                </form> |
+            {% endif %}
+            
             <a href="{{ url_for('auth.logout') }}">Logout</a>
         {% else %}
             <a href="{{ url_for('auth.login') }}">Login</a> |
