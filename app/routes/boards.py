@@ -154,6 +154,32 @@ def repin():
         flash("An error occurred while repinning.", "error")
         return redirect(url_for('dashboard.dashboard'))
 
+@boards_bp.route('/<int:pin_id>/delete', methods=['GET', 'POST'])
+@login_required
+def delete_pin(pin_id):
+    pin = Pin.query.filter_by(id=pin_id, terminated_at=None).first()
+    board = Board.query.filter_by(id=pin.board_id, user_id=current_user.id, terminated_at=None).first_or_404()
+
+    if not pin:
+        flash('Pin not found or you do not have permission to remove it.', 'danger')
+        return redirect(url_for('dashboard.dashboard'))
+    
+    post_id = []
+
+    if not pin.root_pin_id:  # that is the pin is not a repin
+            post_id.append(pin.post_id)
+    
+    if request.method == 'POST':
+        pin.terminated_at = datetime.utcnow()
+        if post_id:
+            posts.soft_delete_posts(post_id)
+        db.session.commit()
+        flash('Pin deleted successfully.', 'success')
+        return view_board(board.id)
+    
+    return view_board(board.id)
+
+
 @boards_bp.route('/boards/<int:board_id>/delete', methods=['GET', 'POST'])
 @login_required
 def delete_board(board_id):
