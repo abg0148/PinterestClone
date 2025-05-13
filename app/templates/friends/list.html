@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Friend Requests{% endblock %}
+
+{% block content %}
+<h2>Pending Friend Requests</h2>
+
+{% if requests %}
+  <ul>
+    {% for req in requests %}
+      <li>
+        <strong>{{ req.username }}</strong> ({{ req.email }})
+        <form method="POST" action="{{ url_for('friends.friend_request_response') }}" style="display: inline;">
+          <input type="hidden" name="from_id" value="{{ req.from_id }}">
+          <input type="hidden" name="to_id" value="{{ current_user.id }}">
+          <input type="hidden" name="response" value="accepted">
+          <button type="submit">Accept</button>
+        </form>
+        <form method="POST" action="{{ url_for('friends.friend_request_response') }}" style="display: inline;">
+          <input type="hidden" name="from_id" value="{{ req.from_id }}">
+          <input type="hidden" name="to_id" value="{{ current_user.id }}">
+          <input type="hidden" name="response" value="rejected">
+          <button type="submit">Reject</button>
+        </form>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>No pending friend requests.</p>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,14 @@
+<!-- user_profile.html -->
+<h1>Search Results</h1>
+
+<ul>
+  <li>
+    <strong>Username:</strong> {{ user.username }}<br>
+    <strong>Email:</strong> {{ user.email }}
+    <form method="POST" action="{{ url_for('friends.add_friend') }}" style="display: inline;">
+      <input type="hidden" name="target_id" value="{{ user.id }}">
+      <button type="submit">Add Friend</button>
+    </form>
+  </li>
+</ul>
+ 
