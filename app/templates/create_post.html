@@ -1,45 +1,229 @@
-{% extends "base.html" %}
+{% extends "base_authenticated.html" %}
 
 {% block title %}Create Post{% endblock %}
 
+{% block extra_styles %}
+<style>
+    .create-post-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    .create-post-header {
+        margin-bottom: 32px;
+    }
+
+    .create-post-title {
+        font-size: 32px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 16px;
+    }
+
+    .create-post-form {
+        background: var(--card-background);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .form-group {
+        margin-bottom: 24px;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 16px;
+        font-weight: 500;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+
+    .form-hint {
+        display: block;
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin-top: 4px;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 16px;
+        transition: border-color 0.2s ease;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: var(--text-primary);
+    }
+
+    .form-select {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 16px;
+        background-color: var(--card-background);
+        cursor: pointer;
+        transition: border-color 0.2s ease;
+    }
+
+    .form-select:focus {
+        outline: none;
+        border-color: var(--text-primary);
+    }
+
+    .file-input-container {
+        margin-top: 8px;
+    }
+
+    .file-input {
+        display: block;
+        margin-bottom: 8px;
+    }
+
+    .submit-button {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 24px;
+        padding: 12px 24px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .submit-button:hover {
+        background-color: var(--primary-hover);
+    }
+
+    .section-divider {
+        margin: 32px 0;
+        text-align: center;
+        position: relative;
+    }
+
+    .section-divider::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .section-divider span {
+        background: var(--card-background);
+        padding: 0 16px;
+        color: var(--text-secondary);
+        position: relative;
+        font-size: 14px;
+    }
+
+    .url-section, .upload-section {
+        padding: 24px;
+        border: 2px solid var(--border-color);
+        border-radius: 16px;
+        margin-bottom: 24px;
+    }
+
+    .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0 0 16px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<h1>Create a New Post</h1>
+<div class="create-post-container">
+    <div class="create-post-header">
+        <h1 class="create-post-title">Create a new Pin</h1>
+    </div>
 
-<form method="POST" enctype="multipart/form-data">
-    <p>
-        <label for="tags">Tags (comma-separated):</label><br>
-        <input type="text" id="tags" name="tags" required>
-        <br>
-        <small>Example: nature, sunset, beach</small>
-    </p>
+    <form method="POST" enctype="multipart/form-data" class="create-post-form">
+        <div class="form-group">
+            <label class="form-label" for="tags">Tags</label>
+            <input type="text" id="tags" name="tags" class="form-input" required>
+            <span class="form-hint">Separate tags with commas (e.g., nature, sunset, beach)</span>
+        </div>
 
-    <p>
-        <label for="board">Select Board:</label><br>
-        <select id="board" name="board_id" required>
-            <option value="">Choose a board...</option>
-            {% for board in boards %}
-                <option value="{{ board.id }}">{{ board.board_name }}</option>
-            {% endfor %}
-        </select>
-    </p>
+        <div class="form-group">
+            <label class="form-label" for="board">Board</label>
+            <select id="board" name="board_id" class="form-select" required>
+                <option value="">Choose a board...</option>
+                {% for board in boards %}
+                    <option value="{{ board.id }}" {% if pre_selected_board and pre_selected_board.id == board.id %}selected{% endif %}>{{ board.board_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
 
-    <p>
-        <label for="image_url">Image URL (optional):</label><br>
-        <input type="url" id="image_url" name="image_url" placeholder="https://example.com/image">
-    </p>
+        <div class="url-section">
+            <h2 class="section-title">Add from URL</h2>
+            <div class="form-group">
+                <label class="form-label" for="image_url">Image URL</label>
+                <input type="url" id="image_url" name="image_url" class="form-input" placeholder="https://example.com/image.jpg">
+                <span class="form-hint">Enter the direct URL to the image</span>
+            </div>
 
-    <p>
-        <label for="source_page">Source Page (optional):</label><br>
-        <input type="url" id="source_page" name="source_page" placeholder="https://example.com/source">
-    </p>
+            <div class="form-group">
+                <label class="form-label" for="source_page">Source page</label>
+                <input type="url" id="source_page" name="source_page" class="form-input" placeholder="https://example.com/page">
+                <span class="form-hint">Required when using image URL: Link to the page containing the image</span>
+            </div>
+        </div>
 
-    <p>
-        <label for="image_blob">Upload Image:</label><br>
-        <input type="file" id="image_blob" name="image_blob" accept="image/jpeg,image/png,image/gif">
-        <br>
-        <small>Supported formats: JPG, PNG, GIF</small>
-    </p>
+        <div class="section-divider">
+            <span>OR</span>
+        </div>
 
-    <input type="submit" value="Create Post">
-</form>
+        <div class="upload-section">
+            <h2 class="section-title">Upload image</h2>
+            <div class="form-group">
+                <label class="form-label" for="image_blob">Choose file</label>
+                <div class="file-input-container">
+                    <input type="file" id="image_blob" name="image_blob" accept="image/jpeg,image/png,image/gif" class="file-input">
+                    <span class="form-hint">Supported formats: JPG, PNG, GIF</span>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="submit-button">Create Pin</button>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const imageUrlInput = document.getElementById('image_url');
+    const sourcePageInput = document.getElementById('source_page');
+    const imageFileInput = document.getElementById('image_blob');
+
+    // When image URL is entered, make source page required
+    imageUrlInput.addEventListener('input', function() {
+        if (this.value.trim()) {
+            sourcePageInput.required = true;
+            imageFileInput.required = false;
+        } else {
+            sourcePageInput.required = false;
+            imageFileInput.required = !sourcePageInput.value.trim();
+        }
+    });
+
+    // When file is selected, make source page optional
+    imageFileInput.addEventListener('change', function() {
+        if (this.files.length > 0) {
+            sourcePageInput.required = false;
+            imageUrlInput.required = false;
+        } else {
+            imageUrlInput.required = !sourcePageInput.value.trim();
+        }
+    });
+});
+</script>
 {% endblock %}

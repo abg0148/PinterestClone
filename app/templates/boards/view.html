@@ -1,88 +1,298 @@
-{% extends "base.html" %}
+{% extends "base_authenticated.html" %}
+{% from "components/pin_tile.html" import pin_tile, pin_tile_styles %}
+
+{% block title %}{{ board.board_name }}{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .board-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    .board-header {
+        margin-bottom: 48px;
+        text-align: left;
+    }
+
+    .board-title {
+        font-size: 36px;
+        font-weight: 600;
+        margin-bottom: 16px;
+        color: var(--text-primary);
+    }
+
+    .board-description {
+        font-size: 16px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+        margin-bottom: 24px;
+    }
+
+    .board-actions {
+        display: flex;
+        gap: 16px;
+        margin-top: 16px;
+    }
+
+    .board-button {
+        padding: 12px 24px;
+        border-radius: 24px;
+        border: none;
+        font-size: 15px;
+        font-weight: 500;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .edit-button {
+        background-color: #efefef;
+        color: var(--text-primary);
+    }
+
+    .edit-button:hover {
+        background-color: #e0e0e0;
+        transform: translateY(-1px);
+    }
+
+    .add-pin-button {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .add-pin-button:hover {
+        background-color: var(--primary-hover);
+        transform: translateY(-1px);
+    }
+
+    .follow-button {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .follow-button:hover {
+        background-color: var(--primary-hover);
+        transform: translateY(-1px);
+    }
+
+    .empty-message {
+        color: var(--text-secondary);
+        margin-top: 48px;
+    }
+
+    /* Modal styles */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal.show {
+        display: flex;
+    }
+
+    .modal-content {
+        background: white;
+        padding: 24px;
+        border-radius: 16px;
+        width: 100%;
+        max-width: 480px;
+        position: relative;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+    .modal-title {
+        font-size: 20px;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        padding: 4px;
+        cursor: pointer;
+        color: #666;
+    }
+
+    .stream-list {
+        margin-bottom: 24px;
+    }
+
+    .stream-option {
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 8px;
+    }
+
+    .stream-option:hover {
+        background-color: #f0f2f5;
+    }
+
+    .stream-option input[type="radio"] {
+        margin-right: 8px;
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
+    .modal-button {
+        padding: 8px 16px;
+        border-radius: 20px;
+        border: none;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+    }
+
+    .modal-button.primary {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .modal-button.primary:hover {
+        background-color: var(--primary-hover);
+        transform: translateY(-1px);
+    }
+
+    .modal-button.secondary {
+        background-color: #f0f2f5;
+        color: var(--text-primary);
+    }
+
+    .modal-button.secondary:hover {
+        background-color: #e4e6e9;
+        transform: translateY(-1px);
+    }
+
+    .create-stream-link {
+        display: block;
+        text-align: center;
+        color: var(--primary-color);
+        text-decoration: none;
+        font-size: 14px;
+        margin-top: 16px;
+    }
+
+    .create-stream-link:hover {
+        text-decoration: underline;
+    }
+</style>
+{{ pin_tile_styles() }}
+{% endblock %}
 
 {% block content %}
-<h1>{{board.board_name}}</h1>
-<p>{{board.description}}</p>
+<div class="board-container">
+    <div class="board-header">
+        <h1 class="board-title">{{ board.board_name }}</h1>
+        {% if board.description %}
+            <p class="board-description">{{ board.description }}</p>
+        {% endif %}
+        
+        <div class="board-actions">
+            {% if board.user_id == current_user.id %}
+                <a href="{{ url_for('posts.create_post', board_id=board.id) }}" class="board-button add-pin-button">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 5v14M5 12h14"/>
+                    </svg>
+                    Add Pin
+                </a>
+                <a href="{{ url_for('boards.edit_board', board_id=board.id) }}" class="board-button edit-button">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    Edit board
+                </a>
+            {% else %}
+                <button class="board-button follow-button" onclick="openFollowModal()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 5v14M5 12h14"/>
+                    </svg>
+                    Follow Board
+                </button>
+            {% endif %}
+        </div>
+    </div>
 
-{% if current_user.id != board.user_id %}
-    <form method="POST" action="{{ url_for('follow_streams.add_board_to_stream', board_id=board.id) }}">
-        <select name="stream_id" required>
-            <option value="">Add to stream...</option>
-            {% for stream in current_user_streams %}
-                <option value="{{ stream.id }}">{{ stream.stream_name }}</option>
+    {% if pins %}
+        <div class="pins-grid">
+            {% for pin, post in pins %}
+                {{ pin_tile(post, pin, post.author, True, board) }}
             {% endfor %}
-        </select>
-        <input type="submit" value="Add to Stream">
-    </form>
-{% endif %}
+        </div>
+    {% else %}
+        <p class="empty-message">No pins found for this board.</p>
+    {% endif %}
+</div>
 
-{% if pins %}
-    <ul>
-        {% for pin, post in pins %}
-            <li>
-                <img src="{{ post.image_url }}" alt="Image" width="150"><br>
-                <strong>Tags:</strong> {{ post.tags }}<br>
-                <strong>Pinned at:</strong> {{ pin.created_at.strftime('%Y-%m-%d %H:%M') }}<br>
-                {% if post.source_page %}
-                    <strong>Source:</strong> <a href="{{ post.source_page }}" target="_blank">Original</a><br>
+<!-- Follow Stream Modal -->
+<div id="followModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Add to Follow Stream</h2>
+            <button class="modal-close" onclick="closeFollowModal()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+
+        <form method="POST" action="{{ url_for('follow_streams.add_board_to_stream', board_id=board.id) }}">
+            <div class="stream-list">
+                {% if streams %}
+                    {% for stream in streams %}
+                        <div class="stream-option">
+                            <input type="radio" 
+                                   name="stream_id" 
+                                   id="stream_{{ stream.id }}" 
+                                   value="{{ stream.id }}"
+                                   required>
+                            <label for="stream_{{ stream.id }}">{{ stream.stream_name }}</label>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p>You don't have any follow streams yet.</p>
                 {% endif %}
+            </div>
 
-                <!-- Like Section -->
-                <div>
-                    <span>{{ post.likes.filter_by(terminated_at=None).count() }} likes</span>
-                    {% set user_liked = post.likes.filter_by(user_id=current_user.id, terminated_at=None).first() %}
-                    <form method="POST" action="{{ url_for('social.toggle_like', post_id=post.id) }}" style="display: inline;">
-                        <button type="submit">{% if user_liked %}Unlike{% else %}Like{% endif %}</button>
-                    </form>
-                </div>
+            <div class="modal-actions">
+                <button type="button" class="modal-button secondary" onclick="closeFollowModal()">Cancel</button>
+                <button type="submit" class="modal-button primary">Add to Stream</button>
+            </div>
+        </form>
+    </div>
+</div>
 
-                <!-- Comments Section -->
-                <div>
-                    <h4>Comments</h4>
-                    {% if pin.comments.filter_by(deleted_at=None).count() > 0 %}
-                        <ul>
-                            {% for comment in pin.comments.filter_by(deleted_at=None).all() %}
-                                <li>
-                                    <strong>{{ comment.author.username }}</strong>: {{ comment.body }}
-                                    {% if comment.user_id == current_user.id or board.user_id == current_user.id %}
-                                        <form method="POST" action="{{ url_for('social.delete_comment', comment_id=comment.id) }}" style="display: inline;">
-                                            <button type="submit">Delete</button>
-                                        </form>
-                                    {% endif %}
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p>No comments yet.</p>
-                    {% endif %}
+<script>
+function openFollowModal() {
+    document.getElementById('followModal').classList.add('show');
+}
 
-                    {% if board.allow_public_comments or board.user_id == current_user.id or current_user.is_friend_with(board.user_id) %}
-                        <form method="POST" action="{{ url_for('social.add_comment', pin_id=pin.id) }}">
-                            <input type="text" name="comment" placeholder="Add a comment..." required>
-                            <button type="submit">Post</button>
-                        </form>
-                    {% endif %}
-                </div>
-
-                <!-- Repin Form -->
-                {% if board.user_id != current_user.id %}
-                    <form method="POST" action="{{ url_for('boards.repin') }}">
-                        <input type="hidden" name="post_id" value="{{ post.id }}">
-                        <input type="hidden" name="source_pin_id" value="{{ pin.id }}">
-                        <select name="board_id" required>
-                            <option value="">Select a board to pin to...</option>
-                            {% for user_board in current_user_boards %}
-                                <option value="{{ user_board.id }}">{{ user_board.board_name }}</option>
-                            {% endfor %}
-                        </select>
-                        <button type="submit">Repin</button>
-                    </form>
-                {% endif %}
-            </li>
-            <br>
-        {% endfor %}
-    </ul>
-{% else %}
-    <p>No pins found for this board.</p>
-{% endif %}
+function closeFollowModal() {
+    document.getElementById('followModal').classList.remove('show');
+}
+</script>
 {% endblock %}

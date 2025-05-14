@@ -11,6 +11,16 @@ posts_bp = Blueprint('posts', __name__)
 @login_required
 def create_post():
     boards = Board.query.filter_by(user_id=current_user.id, terminated_at=None).all()
+    
+    # Get pre-selected board from query params
+    pre_selected_board_id = request.args.get('board_id', type=int)
+    pre_selected_board = None
+    if pre_selected_board_id:
+        pre_selected_board = Board.query.filter_by(
+            id=pre_selected_board_id,
+            user_id=current_user.id,
+            terminated_at=None
+        ).first()
 
     if request.method == 'POST':
         # Get form data
@@ -23,33 +33,33 @@ def create_post():
         # Validate required fields
         if not tags_raw:
             flash("Tags are required.", "error")
-            return render_template('create_post.html', boards=boards)
+            return render_template('create_post.html', boards=boards, pre_selected_board=pre_selected_board)
         
         if not board_id:
             flash("Please select a board.", "error")
-            return render_template('create_post.html', boards=boards)
+            return render_template('create_post.html', boards=boards, pre_selected_board=pre_selected_board)
 
         if not image_blob:
             flash("Please upload an image.", "error")
-            return render_template('create_post.html', boards=boards)
+            return render_template('create_post.html', boards=boards, pre_selected_board=pre_selected_board)
 
         # Process tags - split by comma and clean
         tags = ','.join(tag.strip() for tag in tags_raw.split(',') if tag.strip())
         
         if not tags:  # If no valid tags after processing
             flash("Please provide at least one valid tag.", "error")
-            return render_template('create_post.html', boards=boards)
+            return render_template('create_post.html', boards=boards, pre_selected_board=pre_selected_board)
 
         # Validate board exists and belongs to user
         board = Board.query.filter_by(id=board_id, user_id=current_user.id, terminated_at=None).first()
         if not board:
             flash("Invalid board selected.", "error")
-            return render_template('create_post.html', boards=boards)
+            return render_template('create_post.html', boards=boards, pre_selected_board=pre_selected_board)
 
         # Validate image file
         if not image_blob.filename:
             flash("Invalid image file.", "error")
-            return render_template('create_post.html', boards=boards)
+            return render_template('create_post.html', boards=boards, pre_selected_board=pre_selected_board)
 
         # Generate image URL if not provided
         if not image_url:
@@ -86,9 +96,9 @@ def create_post():
             db.session.rollback()
             flash("Something went wrong while creating the post.", "error")
             print(f"Error creating post: {str(e)}")
-            return render_template('create_post.html', boards=boards)
+            return render_template('create_post.html', boards=boards, pre_selected_board=pre_selected_board)
 
-    return render_template('create_post.html', boards=boards)
+    return render_template('create_post.html', boards=boards, pre_selected_board=pre_selected_board)
 
 from flask import send_file, abort
 from io import BytesIO
@@ -102,3 +112,25 @@ def serve_generated_image(generated_id):
         return send_file(BytesIO(post.image_blob), mimetype='image/jpeg')
     else:
         abort(404)
+
+# Remove or comment out the view_post route since we're moving it to boards blueprint
+# @posts_bp.route('/posts/<int:post_id>')
+# @login_required
+# def view_post(post_id):
+#     post = Post.query.filter_by(id=post_id, terminated_at=None).first_or_404()
+#     pin = Pin.query.filter_by(post_id=post_id, terminated_at=None).first_or_404()
+#     board = Board.query.get_or_404(pin.board_id)
+#     
+#     # Get current user's boards for repinning
+#     current_user_boards = []
+#     if board.user_id != current_user.id:
+#         current_user_boards = Board.query.filter_by(
+#             user_id=current_user.id,
+#             terminated_at=None
+#         ).all()
+#     
+#     return render_template('posts/view.html',
+#                          post=post,
+#                          pin=pin,
+#                          board=board,
+#                          current_user_boards=current_user_boards)
