@@ -1,19 +1,144 @@
-{% extends "base.html" %}
+{% extends "base_authenticated.html" %}
+
 {% block title %}Create Board{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .create-board-container {
+        max-width: 600px;
+        margin: 40px auto;
+        padding: 32px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: var(--shadow-md);
+    }
+
+    .create-board-header {
+        margin-bottom: 32px;
+        text-align: center;
+    }
+
+    .create-board-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .form-group {
+        margin-bottom: 24px;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 15px;
+        transition: all 0.2s ease;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(230, 0, 35, 0.1);
+    }
+
+    textarea.form-input {
+        min-height: 120px;
+        resize: vertical;
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 24px;
+    }
+
+    .checkbox-input {
+        width: 18px;
+        height: 18px;
+        border: 2px solid var(--border-color);
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .checkbox-label {
+        font-size: 15px;
+        color: var(--text-primary);
+        cursor: pointer;
+    }
+
+    .submit-button {
+        width: 100%;
+        padding: 12px;
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .submit-button:hover {
+        background-color: var(--primary-hover);
+        transform: translateY(-1px);
+    }
+
+    .submit-button:active {
+        transform: translateY(0);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<h2>Create a New Board</h2>
-<form method="POST">
-    <label>Board Name:</label><br>
-    <input type="text" name="name" required><br><br>
+<div class="create-board-container">
+    <div class="create-board-header">
+        <h1 class="create-board-title">Create a New Board</h1>
+    </div>
 
-    <label>Description:</label><br>
-    <textarea name="description"></textarea><br><br>
+    <form method="POST">
+        <div class="form-group">
+            <label class="form-label" for="board-name">Board Name</label>
+            <input type="text" 
+                   id="board-name"
+                   name="name" 
+                   class="form-input"
+                   placeholder="Enter board name"
+                   required>
+        </div>
 
-    <label>
-        <input type="checkbox" name="allow_comments" checked>
-        Allow Public Comments
-    </label><br><br>
+        <div class="form-group">
+            <label class="form-label" for="board-description">Description</label>
+            <textarea id="board-description"
+                      name="description"
+                      class="form-input"
+                      placeholder="What's your board about?"></textarea>
+        </div>
 
-    <input type="submit" value="Create Board">
-</form>
+        <div class="checkbox-group">
+            <input type="checkbox" 
+                   id="allow-comments"
+                   name="allow_comments"
+                   class="checkbox-input"
+                   checked>
+            <label class="checkbox-label" for="allow-comments">
+                Allow public comments on this board
+            </label>
+        </div>
+
+        <button type="submit" class="submit-button">Create Board</button>
+    </form>
+</div>
 {% endblock %}
