@@ -60,6 +60,24 @@
         color: var(--text-primary);
     }
 
+    .profile-stats {
+        display: flex;
+        gap: 24px;
+        margin-bottom: 24px;
+    }
+
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-primary);
+        text-decoration: none;
+    }
+
+    .stat-count {
+        font-weight: 600;
+    }
+
     .profile-actions {
         display: flex;
         gap: 16px;
@@ -73,6 +91,11 @@
         text-decoration: none;
         cursor: pointer;
         border: none;
+        transition: all 0.2s ease;
+    }
+
+    .profile-button:hover {
+        transform: translateY(-1px);
     }
 
     .primary-button {
@@ -80,9 +103,17 @@
         color: white;
     }
 
+    .primary-button:hover {
+        background-color: var(--primary-hover);
+    }
+
     .secondary-button {
         background-color: #efefef;
         color: var(--text-primary);
+    }
+
+    .secondary-button:hover {
+        background-color: #e0e0e0;
     }
 
     .boards-section {
@@ -94,6 +125,26 @@
         font-weight: 600;
         color: var(--text-primary);
         margin-bottom: 24px;
+    }
+
+    .friend-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 24px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .friend-status.pending {
+        background-color: #ffd700;
+        color: #000;
+    }
+
+    .friend-status.friends {
+        background-color: #4caf50;
+        color: white;
     }
 </style>
 {{ board_tile_styles() }}
@@ -111,11 +162,45 @@
             {% if user.bio %}
                 <p class="profile-bio">{{ user.bio }}</p>
             {% endif %}
-            {% if user.id == current_user.id %}
-                <div class="profile-actions">
-                    <a href="{{ url_for('profile.edit_profile') }}" class="profile-button secondary-button">Edit Profile</a>
+
+            <div class="profile-stats">
+                <a href="{{ url_for('profile.view_friends', user_id=user.id) }}" class="stat-item">
+                    <span class="stat-count">{{ friends|length }}</span>
+                    <span class="stat-label">Friends</span>
+                </a>
+                <div class="stat-item">
+                    <span class="stat-count">{{ boards|length }}</span>
+                    <span class="stat-label">Boards</span>
                 </div>
-            {% endif %}
+            </div>
+
+            <div class="profile-actions">
+                {% if user.id == current_user.id %}
+                    <a href="{{ url_for('profile.edit_profile') }}" class="profile-button secondary-button">Edit Profile</a>
+                {% else %}
+                    {% if friendship_status == 'friends' %}
+                        <span class="friend-status friends">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 6L9 17l-5-5"/>
+                            </svg>
+                            Friends
+                        </span>
+                    {% elif friendship_status == 'pending_sent' %}
+                        <span class="friend-status pending">Request Sent</span>
+                    {% elif friendship_status == 'pending_received' %}
+                        <form method="POST" action="{{ url_for('social.accept_friend_request', user_id=user.id) }}" style="display: inline;">
+                            <button type="submit" class="profile-button primary-button">Accept Friend Request</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('social.decline_friend_request', user_id=user.id) }}" style="display: inline;">
+                            <button type="submit" class="profile-button secondary-button">Decline</button>
+                        </form>
+                    {% else %}
+                        <form method="POST" action="{{ url_for('social.send_friend_request', user_id=user.id) }}" style="display: inline;">
+                            <button type="submit" class="profile-button primary-button">Add Friend</button>
+                        </form>
+                    {% endif %}
+                {% endif %}
+            </div>
         </div>
     </div>
 

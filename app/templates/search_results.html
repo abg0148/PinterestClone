@@ -1,6 +1,7 @@
 {% extends "base_authenticated.html" %}
 {% from "components/pin_tile.html" import pin_tile, pin_tile_styles %}
 {% from "components/user_tile.html" import user_tile, user_tile_styles %}
+{% from "components/stream_tile.html" import stream_tile, stream_tile_styles %}
 
 {% block title %}Search Results{% endblock %}
 
@@ -171,6 +172,7 @@
 </style>
 {{ pin_tile_styles() }}
 {{ user_tile_styles() }}
+{{ stream_tile_styles() }}
 {% endblock %}
 
 {% block content %}
@@ -194,14 +196,14 @@
 </section>
 {% endif %}
 
-<!-- Posts Section -->
+<!-- Pins Section -->
 {% if search_type in ['all', 'pins'] %}
 <section class="search-section">
     <h3>Pins</h3>
     {% if posts %}
         <div class="pins-grid">
             {% for post, pin, board, user in posts %}
-                {{ pin_tile(post, pin, user, True, board) }}
+                {{ pin_tile(post, pin, user, True, board, Like) }}
             {% endfor %}
         </div>
     {% else %}
@@ -210,25 +212,18 @@
 </section>
 {% endif %}
 
-<!-- Streams Section -->
+<!-- Follow Streams Section -->
 {% if search_type in ['all', 'streams'] %}
 <section class="search-section">
     <h3>Follow Streams</h3>
     {% if streams %}
-        <ul class="search-results-list">
+        <div class="streams-grid">
             {% for stream in streams %}
-            <li class="search-result-item">
-                <div class="result-details">
-                    <strong><a href="{{ url_for('follow_streams.view_stream', stream_id=stream.id) }}">{{ stream.stream_name }}</a></strong>
-                    <div class="actions">
-                        <a href="{{ url_for('follow_streams.edit_stream', stream_id=stream.id) }}" class="edit-link">Edit</a>
-                    </div>
-                </div>
-            </li>
+                {{ stream_tile(stream) }}
             {% endfor %}
-        </ul>
+        </div>
     {% else %}
-        <p>No streams found matching "{{ search_term }}"</p>
+        <p>No follow streams found matching "{{ search_term }}"</p>
     {% endif %}
 </section>
 {% endif %}

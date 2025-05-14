@@ -1,36 +1,199 @@
-{% extends "base.html" %}
+{% extends "base_authenticated.html" %}
 
 {% block title %}Edit {{ stream.stream_name }}{% endblock %}
 
+{% block extra_styles %}
+<style>
+    .edit-stream-container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 32px;
+    }
+
+    .edit-stream-header {
+        margin-bottom: 40px;
+        text-align: center;
+    }
+
+    .edit-stream-title {
+        font-size: 28px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .stream-name-form {
+        background: white;
+        padding: 24px;
+        border-radius: 16px;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 32px;
+    }
+
+    .form-group {
+        margin-bottom: 24px;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 15px;
+        transition: all 0.2s ease;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(230, 0, 35, 0.1);
+    }
+
+    .boards-section {
+        background: white;
+        padding: 24px;
+        border-radius: 16px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .section-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0 0 24px 0;
+    }
+
+    .boards-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .board-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .board-item:last-child {
+        border-bottom: none;
+    }
+
+    .board-info {
+        flex: 1;
+    }
+
+    .board-name {
+        font-size: 16px;
+        font-weight: 500;
+        color: var(--text-primary);
+        margin: 0 0 4px 0;
+    }
+
+    .board-description {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+
+    .remove-button {
+        padding: 8px 16px;
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .remove-button:hover {
+        background-color: #c82333;
+        transform: translateY(-1px);
+    }
+
+    .submit-button {
+        width: 100%;
+        padding: 12px;
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .submit-button:hover {
+        background-color: var(--primary-hover);
+        transform: translateY(-1px);
+    }
+
+    .empty-message {
+        text-align: center;
+        color: var(--text-secondary);
+        font-size: 15px;
+        padding: 32px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<h2>Edit Stream</h2>
+<div class="edit-stream-container">
+    <div class="edit-stream-header">
+        <h1 class="edit-stream-title">Edit Stream</h1>
+    </div>
 
-<form method="POST">
-    <p>
-        <label for="stream_name">Stream Name:</label><br>
-        <input type="text" id="stream_name" name="stream_name" value="{{ stream.stream_name }}" required>
-        <input type="submit" value="Update Name">
-    </p>
-</form>
+    <div class="stream-name-form">
+        <form method="POST">
+            <div class="form-group">
+                <label class="form-label" for="stream_name">Stream Name</label>
+                <input type="text" 
+                       id="stream_name" 
+                       name="stream_name" 
+                       value="{{ stream.stream_name }}" 
+                       class="form-input"
+                       required>
+            </div>
+            <button type="submit" class="submit-button">Update Stream Name</button>
+        </form>
+    </div>
 
-<h3>Current Boards</h3>
-{% if current_boards %}
-    <ul>
-        {% for stream_board in current_boards %}
-            <li>
-                {{ stream_board.board.board_name }}
-                {% if stream_board.board.description %}
-                    - {{ stream_board.board.description }}
-                {% endif %}
-                <form method="POST" style="display: inline;">
-                    <input type="hidden" name="board_id" value="{{ stream_board.board_id }}">
-                    <input type="hidden" name="action" value="remove">
-                    <input type="submit" value="Remove">
-                </form>
-            </li>
-        {% endfor %}
-    </ul>
-{% else %}
-    <p>No boards in this stream yet.</p>
-{% endif %}
+    <div class="boards-section">
+        <h2 class="section-title">Current Boards</h2>
+        {% if current_boards %}
+            <ul class="boards-list">
+                {% for stream_board in current_boards %}
+                    <li class="board-item">
+                        <div class="board-info">
+                            <h3 class="board-name">{{ stream_board.board.board_name }}</h3>
+                            {% if stream_board.board.description %}
+                                <p class="board-description">{{ stream_board.board.description }}</p>
+                            {% endif %}
+                        </div>
+                        <form method="POST" style="display: inline;">
+                            <input type="hidden" name="board_id" value="{{ stream_board.board_id }}">
+                            <input type="hidden" name="action" value="remove">
+                            <button type="submit" class="remove-button">Remove</button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="empty-message">No boards in this stream yet.</p>
+        {% endif %}
+    </div>
+</div>
 {% endblock %} 
