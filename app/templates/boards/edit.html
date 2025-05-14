@@ -17,4 +17,8 @@
 
     <input type="submit" value="Update Board">
 </form>
+
+<form method="POST" action="{{ url_for('boards.delete_board', board_id=board.id) }}">
+    <input type="submit" value="Delete Board">
+</form>
 {% endblock %}

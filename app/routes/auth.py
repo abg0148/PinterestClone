@@ -6,7 +6,7 @@ from flask_login import login_user, login_required, logout_user
 from werkzeug.security import check_password_hash
 from app.models import User
 
-auth_bp = Blueprint('auth', __name__)
+auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
 @auth_bp.route('/signup', methods=['GET', 'POST'])
 def signup():

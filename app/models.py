@@ -171,8 +171,11 @@ class FollowStream(db.Model):
 
     # Relationships
     user = db.relationship('User', backref='follow_streams')
-    boards = db.relationship('Board', secondary='follow_stream_board')
-
+    boards = db.relationship(
+        'Board',
+        secondary='follow_stream_board',
+        overlaps="stream_boards"
+    )
 
 class FollowStreamBoard(db.Model):
     __tablename__ = 'follow_stream_board'
@@ -183,5 +186,13 @@ class FollowStreamBoard(db.Model):
     deleted_at = db.Column(db.DateTime)
 
     # Relationships
-    stream = db.relationship('FollowStream', backref='stream_boards')
-    board = db.relationship('Board', backref='stream_boards')
+    stream = db.relationship(
+        'FollowStream',
+        backref='stream_boards',
+        overlaps="boards"
+    )
+    board = db.relationship(
+        'Board',
+        backref='stream_boards',
+        overlaps="boards"
+    )

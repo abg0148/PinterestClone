@@ -3,3 +3,5 @@ python-dotenv
 psycopg2-binary
 Flask-SQLAlchemy
 Flask-Login
+requests
+Werkzeug>=2.0

@@ -1,9 +1,12 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, abort
 from flask_login import login_required, current_user
 from app import db
 from app.models import Post, Pin, Board
 from datetime import datetime
 import uuid
+from io import BytesIO
+import requests
+from werkzeug.datastructures import FileStorage
 
 posts_bp = Blueprint('posts', __name__)
 
@@ -20,6 +23,21 @@ def create_post():
         source_page = request.form.get('source_page', '').strip() or None
         image_blob = request.files.get('image_blob')
 
+        # If image_blob not present, attempt to fetch from image_url
+        if not image_blob and image_url:
+            try:
+                response = requests.get(image_url)
+                response.raise_for_status()
+                filename = image_url.split("/")[-1] or "downloaded_image"
+                image_blob = FileStorage(
+                    stream=BytesIO(response.content),
+                    filename=filename,
+                    content_type=response.headers.get('Content-Type', 'application/octet-stream')
+                )
+            except Exception as e:
+                flash(f"Failed to download image from URL, please upload the image")
+                return render_template('create_post.html', boards=boards)
+
         # Validate required fields
         if not tags_raw:
             flash("Tags are required.", "error")
@@ -30,13 +48,12 @@ def create_post():
             return render_template('create_post.html', boards=boards)
 
         if not image_blob:
-            flash("Please upload an image.", "error")
+            flash("Please upload an image or provide a valid image URL.", "error")
             return render_template('create_post.html', boards=boards)
 
         # Process tags - split by comma and clean
         tags = ','.join(tag.strip() for tag in tags_raw.split(',') if tag.strip())
-        
-        if not tags:  # If no valid tags after processing
+        if not tags:
             flash("Please provide at least one valid tag.", "error")
             return render_template('create_post.html', boards=boards)
 
@@ -69,7 +86,7 @@ def create_post():
                 created_at=datetime.utcnow()
             )
             db.session.add(new_post)
-            db.session.flush()  # To get post.id before committing
+            db.session.flush()
 
             # Create corresponding Pin
             new_pin = Pin(
@@ -90,9 +107,6 @@ def create_post():
 
     return render_template('create_post.html', boards=boards)
 
-from flask import send_file, abort
-from io import BytesIO
-
 @posts_bp.route('/media/<path:generated_id>')
 def serve_generated_image(generated_id):
     internal_url = f"/media/{generated_id}"
@@ -102,3 +116,36 @@ def serve_generated_image(generated_id):
         return send_file(BytesIO(post.image_blob), mimetype='image/jpeg')
     else:
         abort(404)
+
+@posts_bp.route('/posts/delete', methods=['GET', 'POST'])
+@login_required
+def delete_post():
+    post_ids = request.json.get('post_ids', [])
+    post_ids = [int(pid) for pid in post_ids if str(pid).isdigit()]
+
+    if not post_ids:
+        return {"error": "No valid post IDs provided"}, 400
+
+    try:
+        soft_delete_posts(post_ids)
+        return {"message": "Posts soft deleted successfully."}, 200
+    except Exception as e:
+        return {"error": str(e)}, 500
+
+def soft_delete_posts(post_ids):
+    if not post_ids:
+        return
+    
+    posts = Post.query.filter(Post.id.in_(post_ids), Post.terminated_at.is_(None)).all()
+    pins = Pin.query.filter(Pin.post_id.in_(post_ids), Pin.terminated_at.is_(None)).all()
+
+    try:
+        for post in posts:
+            post.terminated_at = datetime.utcnow()
+        for pin in pins:
+            pin.terminated_at = datetime.utcnow()
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error during deletion of posts: {str(e)}")
+        raise
