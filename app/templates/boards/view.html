@@ -30,6 +30,18 @@
         margin-bottom: 24px;
     }
 
+    .board-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+    .board-privacy {
+        color: var(--text-secondary);
+        font-size: 14px;
+    }
+
     .board-actions {
         display: flex;
         gap: 16px;
@@ -210,6 +222,16 @@
             <p class="board-description">{{ board.description }}</p>
         {% endif %}
         
+        <div class="board-meta">
+            <div class="board-privacy">
+                {% if board.allow_public_comments %}
+                    <span>Public Comments</span>
+                {% else %}
+                    <span>Friends Only Comments</span>
+                {% endif %}
+            </div>
+        </div>
+
         <div class="board-actions">
             {% if board.user_id == current_user.id %}
                 <a href="{{ url_for('posts.create_post', board_id=board.id) }}" class="board-button add-pin-button">
@@ -225,6 +247,9 @@
                     </svg>
                     Edit board
                 </a>
+                <form method="POST" action="{{ url_for('boards.delete_board', board_id=board.id) }}" style="display: inline;">
+                    <button type="submit" class="board-button secondary-button" onclick="return confirm('Are you sure you want to delete this board?')">Delete Board</button>
+                </form>
             {% else %}
                 <button class="board-button follow-button" onclick="openFollowModal()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -239,7 +264,7 @@
     {% if pins %}
         <div class="pins-grid">
             {% for pin, post in pins %}
-                {{ pin_tile(post, pin, post.author, True, board) }}
+                {{ pin_tile(post, pin, post.author, True, board, Like) }}
             {% endfor %}
         </div>
     {% else %}

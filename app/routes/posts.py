@@ -1,9 +1,11 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, abort
 from flask_login import login_required, current_user
 from app import db
 from app.models import Post, Pin, Board
 from datetime import datetime
 import uuid
+import requests
+from io import BytesIO
 
 posts_bp = Blueprint('posts', __name__)
 
@@ -15,10 +17,18 @@ def create_post():
     # Get pre-selected board from query params
     pre_selected_board_id = request.args.get('board_id', type=int)
     pre_selected_board = None
+    
     if pre_selected_board_id:
         pre_selected_board = Board.query.filter_by(
             id=pre_selected_board_id,
             user_id=current_user.id,
+            terminated_at=None
+        ).first()
+    else:
+        # If no board is pre-selected, default to Unorganized Ideas board
+        pre_selected_board = Board.query.filter_by(
+            user_id=current_user.id,
+            board_name="Unorganized Ideas",
             terminated_at=None
         ).first()
 
@@ -26,9 +36,9 @@ def create_post():
         # Get form data
         tags_raw = request.form.get('tags', '').strip()
         board_id = request.form.get('board_id')
-        image_url = request.form.get('image_url', '').strip() or None
-        source_page = request.form.get('source_page', '').strip() or None
-        image_blob = request.files.get('image_blob')
+        image_url = request.form.get('image_url', '').strip()
+        source_page = request.form.get('source_page', '').strip()
+        image_file = request.files.get('image_blob')
 
         # Validate required fields
         if not tags_raw:
@@ -37,10 +47,6 @@ def create_post():
         
         if not board_id:
             flash("Please select a board.", "error")
-            return render_template('create_post.html', boards=boards, pre_selected_board=pre_selected_board)
-
-        if not image_blob:
-            flash("Please upload an image.", "error")
             return render_template('create_post.html', boards=boards, pre_selected_board=pre_selected_board)
 
         # Process tags - split by comma and clean
@@ -56,17 +62,35 @@ def create_post():
             flash("Invalid board selected.", "error")
             return render_template('create_post.html', boards=boards, pre_selected_board=pre_selected_board)
 
-        # Validate image file
-        if not image_blob.filename:
-            flash("Invalid image file.", "error")
+        # Handle image source
+        image_blob = None
+        final_image_url = None
+
+        # Check if we have either an image URL or an uploaded file
+        if not image_url and not (image_file and image_file.filename):
+            flash("Please either provide an image URL or upload an image file.", "error")
             return render_template('create_post.html', boards=boards, pre_selected_board=pre_selected_board)
 
-        # Generate image URL if not provided
-        if not image_url:
+        # If both are provided, prioritize the uploaded file
+        if image_file and image_file.filename:
+            image_blob = image_file.read()
             generated_id = f"generated-{uuid.uuid4()}"
             final_image_url = f"/media/{generated_id}"
-        else:
-            final_image_url = image_url
+        elif image_url:
+            if not source_page:
+                flash("Source page is required when using an image URL.", "error")
+                return render_template('create_post.html', boards=boards, pre_selected_board=pre_selected_board)
+            
+            try:
+                # Download the image
+                response = requests.get(image_url)
+                response.raise_for_status()  # Raises an HTTPError for bad responses
+                image_blob = response.content
+                final_image_url = image_url
+            except Exception as e:
+                flash("Error downloading image from URL. Please check the URL or try uploading the image directly.", "error")
+                print(f"Error downloading image: {str(e)}")
+                return render_template('create_post.html', boards=boards, pre_selected_board=pre_selected_board)
 
         try:
             # Create the Post
@@ -74,8 +98,8 @@ def create_post():
                 user_id=current_user.id,
                 tags=tags,
                 image_url=final_image_url,
-                source_page=source_page,
-                image_blob=image_blob.read(),
+                source_page=source_page if source_page else None,
+                image_blob=image_blob,
                 created_at=datetime.utcnow()
             )
             db.session.add(new_post)
@@ -99,9 +123,6 @@ def create_post():
             return render_template('create_post.html', boards=boards, pre_selected_board=pre_selected_board)
 
     return render_template('create_post.html', boards=boards, pre_selected_board=pre_selected_board)
-
-from flask import send_file, abort
-from io import BytesIO
 
 @posts_bp.route('/media/<path:generated_id>')
 def serve_generated_image(generated_id):

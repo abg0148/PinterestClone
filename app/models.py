@@ -106,6 +106,34 @@ class Pin(db.Model):
 
     # Add relationships
     comments = db.relationship('Comment', backref='pin', lazy='dynamic')
+    repins = db.relationship('Pin',
+                           backref=db.backref('source_pin', remote_side=[id]),
+                           lazy='dynamic')
+
+    def delete(self):
+        """
+        Soft delete a pin and its related data based on whether it's a root pin or repin.
+        If it's a root pin:
+            - Soft delete all repins
+            - Soft delete the associated post
+            - Soft delete this pin
+        If it's a repin:
+            - Only soft delete this pin
+        """
+        now = datetime.utcnow()
+        
+        if self.root_pin_id is None:  # This is a root pin
+            # Soft delete all repins
+            for repin in self.repins.filter_by(terminated_at=None).all():
+                repin.terminated_at = now
+            
+            # Soft delete the associated post
+            if self.post and not self.post.terminated_at:
+                self.post.terminated_at = now
+        
+        # Soft delete this pin
+        self.terminated_at = now
+        db.session.commit()
 
 
 class Comment(db.Model):
@@ -122,9 +150,8 @@ class Comment(db.Model):
 class Like(db.Model):
     __tablename__ = 'like'
 
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True, nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), primary_key=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     terminated_at = db.Column(db.DateTime)
 
@@ -162,18 +189,38 @@ class FollowStream(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     terminated_at = db.Column(db.DateTime)
 
-    # Add relationships
-    stream_boards = db.relationship('FollowStreamBoard', backref='stream', lazy='dynamic')
+    # Relationships
+    boards = db.relationship('Board', 
+                           secondary='follow_stream_board',
+                           primaryjoin="and_(FollowStream.id==FollowStreamBoard.stream_id, FollowStreamBoard.deleted_at==None)",
+                           secondaryjoin="Board.id==FollowStreamBoard.board_id",
+                           lazy='dynamic',
+                           backref=db.backref('follow_streams', lazy='dynamic'))
+
+    def get_last_pin(self):
+        """Get the most recent pin from any board in this stream."""
+        from app.models import Pin, Post  # Import here to avoid circular imports
+        
+        # Get all active board IDs in this stream
+        board_ids = [board.id for board in self.boards.all()]
+        
+        if not board_ids:
+            return None
+            
+        # Find the most recent pin from any of these boards
+        return Pin.query.join(Post).filter(
+            Pin.board_id.in_(board_ids),
+            Pin.terminated_at == None,
+            Post.terminated_at == None
+        ).order_by(Post.created_at.desc()).first()
 
 
 class FollowStreamBoard(db.Model):
     __tablename__ = 'follow_stream_board'
 
-    id = db.Column(db.Integer, primary_key=True)
-    stream_id = db.Column(db.Integer, db.ForeignKey('follow_stream.id'), nullable=False)
-    board_id = db.Column(db.Integer, db.ForeignKey('board.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    stream_id = db.Column(db.Integer, db.ForeignKey('follow_stream.id'), primary_key=True)
+    board_id = db.Column(db.Integer, db.ForeignKey('board.id'), primary_key=True)
     deleted_at = db.Column(db.DateTime)
 
     # Add relationships
-    board = db.relationship('Board')
+    board = db.relationship('Board', backref=db.backref('stream_boards', lazy='dynamic'))

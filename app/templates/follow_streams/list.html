@@ -1,4 +1,5 @@
 {% extends "base_authenticated.html" %}
+{% from "components/stream_tile.html" import stream_tile, stream_tile_styles %}
 
 {% block title %}My Follow Streams{% endblock %}
 
@@ -11,175 +12,43 @@
     }
 
     .streams-header {
-        margin-bottom: 32px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 0 8px;
+        margin-bottom: 32px;
     }
 
     .streams-title {
-        font-size: 28px;
+        font-size: 24px;
         font-weight: 600;
-        color: var(--text-primary);
         margin: 0;
+        color: var(--text-primary);
     }
 
     .create-stream-button {
+        padding: 12px 24px;
+        border-radius: 24px;
         background-color: var(--primary-color);
         color: white;
-        border: none;
-        border-radius: 24px;
-        padding: 12px 24px;
-        font-size: 15px;
-        font-weight: 500;
         text-decoration: none;
-        transition: all 0.2s ease;
+        font-weight: 500;
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        box-shadow: var(--shadow-sm);
+        transition: background-color 0.2s;
     }
 
     .create-stream-button:hover {
         background-color: var(--primary-hover);
-        transform: translateY(-1px);
-        box-shadow: var(--shadow-md);
-    }
-
-    .streams-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 20px;
-        margin-top: 24px;
-        padding: 8px;
-    }
-
-    .stream-card {
-        background: var(--card-background);
-        border-radius: 16px;
-        padding: 24px;
-        box-shadow: var(--shadow-sm);
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 1px solid var(--border-color);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .stream-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: var(--primary-color);
-        opacity: 0;
-        transition: opacity 0.2s ease;
-    }
-
-    .stream-card:hover {
-        transform: translateY(-4px);
-        box-shadow: var(--shadow-md);
-    }
-
-    .stream-card:hover::before {
-        opacity: 1;
-    }
-
-    .stream-name {
-        font-size: 18px;
-        font-weight: 600;
-        color: var(--text-primary);
-        margin: 0 0 16px;
-        text-decoration: none;
-        display: block;
-    }
-
-    .stream-name:hover {
-        color: var(--primary-color);
-    }
-
-    .stream-actions {
-        display: flex;
-        gap: 12px;
-        margin-top: 20px;
-    }
-
-    .stream-action {
-        padding: 8px 16px;
-        border-radius: 20px;
-        font-size: 14px;
-        text-decoration: none;
-        transition: all 0.2s ease;
-        flex: 1;
-        text-align: center;
-        font-weight: 500;
-    }
-
-    .stream-action.primary {
-        background-color: var(--primary-color);
-        color: white;
-    }
-
-    .stream-action.primary:hover {
-        background-color: var(--primary-hover);
-        transform: translateY(-1px);
-    }
-
-    .stream-action.secondary {
-        background-color: #f0f2f5;
-        color: var(--text-primary);
-        border: 1px solid var(--border-color);
-    }
-
-    .stream-action.secondary:hover {
-        background-color: #e4e6e9;
-        transform: translateY(-1px);
     }
 
     .empty-message {
         text-align: center;
         color: var(--text-secondary);
-        font-size: 15px;
-        margin: 48px auto;
-        max-width: 400px;
-        padding: 32px;
-        background: var(--card-background);
-        border-radius: 16px;
-        box-shadow: var(--shadow-sm);
-        border: 1px solid var(--border-color);
-    }
-
-    .empty-message p:first-child {
-        font-size: 16px;
-        color: var(--text-primary);
-        font-weight: 500;
-        margin-bottom: 8px;
-    }
-
-    .empty-message p:last-child {
-        margin-bottom: 0;
-        line-height: 1.5;
-    }
-
-    @media (max-width: 768px) {
-        .streams-header {
-            flex-direction: column;
-            gap: 16px;
-            align-items: flex-start;
-        }
-
-        .create-stream-button {
-            width: 100%;
-            justify-content: center;
-        }
-
-        .streams-grid {
-            grid-template-columns: 1fr;
-        }
+        margin-top: 48px;
     }
 </style>
+{{ stream_tile_styles() }}
 {% endblock %}
 
 {% block content %}
@@ -188,8 +57,7 @@
         <h1 class="streams-title">My Follow Streams</h1>
         <a href="{{ url_for('follow_streams.create_stream') }}" class="create-stream-button">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <path d="M12 5v14M5 12h14"/>
             </svg>
             Create New Stream
         </a>
@@ -198,26 +66,11 @@
     {% if streams %}
         <div class="streams-grid">
             {% for stream in streams %}
-                <div class="stream-card">
-                    <a href="{{ url_for('follow_streams.view_stream', stream_id=stream.id) }}" class="stream-name">
-                        {{ stream.stream_name }}
-                    </a>
-                    <div class="stream-actions">
-                        <a href="{{ url_for('follow_streams.view_stream', stream_id=stream.id) }}" class="stream-action primary">
-                            View Stream
-                        </a>
-                        <a href="{{ url_for('follow_streams.edit_stream', stream_id=stream.id) }}" class="stream-action secondary">
-                            Edit
-                        </a>
-                    </div>
-                </div>
+                {{ stream_tile(stream) }}
             {% endfor %}
         </div>
     {% else %}
-        <div class="empty-message">
-            <p>No follow streams yet</p>
-            <p>Create your first follow stream to organize and curate content from multiple boards in one place. It's a great way to keep track of your favorite topics!</p>
-        </div>
+        <p class="empty-message">No follow streams created yet.</p>
     {% endif %}
 </div>
 {% endblock %}

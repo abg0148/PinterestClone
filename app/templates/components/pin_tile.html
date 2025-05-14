@@ -1,4 +1,4 @@
-{% macro pin_tile(post, pin, user, show_board=False, board=None) %}
+{% macro pin_tile(post, pin, user, show_board=False, board=None, Like=None) %}
 <a href="{{ url_for('pins.view_pin', pin_id=pin.id) }}" class="pin-tile">
     <img src="{{ post.image_url }}" alt="Pin image" class="pin-image">
     <div class="pin-overlay">
@@ -20,7 +20,7 @@
             <div class="pin-stats">
                 <div class="pin-likes">
                     <span>❤️</span>
-                    <span>{{ post.likes.filter_by(terminated_at=None).count() }}</span>
+                    <span>{{ post.likes.filter(Like.terminated_at == None).count() if Like else post.likes.count() }}</span>
                 </div>
                 <div class="pin-comments">
                     <span>💬</span>

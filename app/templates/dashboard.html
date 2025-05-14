@@ -1,147 +1,66 @@
 {% extends "base_authenticated.html" %}
+{% from "components/board_tile.html" import board_tile, board_tile_styles %}
+{% from "components/stream_tile.html" import stream_tile, stream_tile_styles %}
 
 {% block title %}Dashboard - PinBoard{% endblock %}
 
 {% block extra_styles %}
 <style>
-    .pins-container {
-        column-count: 5;
-        column-gap: 16px;
-        padding: 16px;
+    .dashboard-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
     }
 
-    @media (max-width: 1600px) {
-        .pins-container {
-            column-count: 4;
-        }
-    }
-
-    @media (max-width: 1200px) {
-        .pins-container {
-            column-count: 3;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .pins-container {
-            column-count: 2;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .pins-container {
-            column-count: 1;
-        }
-    }
-
-    .pin-card {
-        break-inside: avoid;
-        margin-bottom: 16px;
-        border-radius: 16px;
-        overflow: hidden;
-        background: white;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .pin-image {
-        width: 100%;
-        display: block;
-    }
-
-    .pin-content {
-        padding: 16px;
-    }
-
-    .pin-title {
-        font-size: 16px;
+    .section-header {
+        margin: 32px 0 24px;
+        font-size: 24px;
         font-weight: 600;
-        margin-bottom: 8px;
+        color: var(--text-primary);
     }
 
-    .pin-description {
-        font-size: 14px;
-        color: #666;
-        margin-bottom: 12px;
+    .section-header:first-child {
+        margin-top: 0;
     }
 
-    .pin-footer {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
+    .tiles-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 24px;
     }
 
-    .pin-author {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        text-decoration: none;
-        color: #333;
-    }
-
-    .author-avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        overflow: hidden;
-    }
-
-    .author-avatar img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .author-name {
-        font-size: 14px;
-        font-weight: 500;
-    }
-
-    .pin-actions {
-        display: flex;
-        gap: 8px;
-    }
-
-    .pin-action-btn {
-        padding: 8px;
-        border: none;
-        background: none;
-        cursor: pointer;
-        color: #666;
-        border-radius: 50%;
-    }
-
-    .pin-action-btn:hover {
-        background-color: #efefef;
+    .empty-message {
+        text-align: center;
+        color: var(--text-secondary);
+        margin: 48px 0;
     }
 </style>
+{{ board_tile_styles() }}
+{{ stream_tile_styles() }}
 {% endblock %}
 
 {% block content %}
-<div class="pins-container">
-    {% for pin in pins %}
-    <div class="pin-card">
-        <img src="{{ pin.image_url }}" alt="{{ pin.title }}" class="pin-image">
-        <div class="pin-content">
-            <h3 class="pin-title">{{ pin.title }}</h3>
-            <p class="pin-description">{{ pin.description }}</p>
-            <div class="pin-footer">
-                <a href="{{ url_for('profile.view_profile', user_id=pin.author.id) }}" class="pin-author">
-                    <div class="author-avatar">
-                        <img src="{{ url_for('profile.profile_picture', user_id=pin.author.id) }}" alt="{{ pin.author.username }}">
-                    </div>
-                    <span class="author-name">{{ pin.author.username }}</span>
-                </a>
-                <div class="pin-actions">
-                    <button class="pin-action-btn" title="Save">
-                        ❤️
-                    </button>
-                    <button class="pin-action-btn" title="Share">
-                        🔗
-                    </button>
-                </div>
-            </div>
+<div class="dashboard-container">
+    <h2 class="section-header">My Boards</h2>
+    {% if boards %}
+        <div class="tiles-grid">
+            {% for board in boards %}
+                {{ board_tile(board) }}
+            {% endfor %}
         </div>
-    </div>
-    {% endfor %}
+    {% else %}
+        <p class="empty-message">No boards created yet.</p>
+    {% endif %}
+
+    <h2 class="section-header">My Follow Streams</h2>
+    {% if streams %}
+        <div class="tiles-grid">
+            {% for stream in streams %}
+                {{ stream_tile(stream) }}
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="empty-message">No follow streams created yet.</p>
+    {% endif %}
 </div>
 {% endblock %}

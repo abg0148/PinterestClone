@@ -106,7 +106,7 @@
             <img src="{{ url_for('profile.profile_picture', user_id=user.id) }}" alt="{{ user.username }}'s picture">
         </div>
         <div class="profile-info">
-            <h1 class="profile-name">{{ user.username }}</h1>
+            <h1 class="profile-name">{{ user.full_name or user.username }}</h1>
             <p class="profile-username">@{{ user.username }}</p>
             {% if user.bio %}
                 <p class="profile-bio">{{ user.bio }}</p>

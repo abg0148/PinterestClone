@@ -244,8 +244,8 @@
                     <div class="pin-likes">
                         <form method="POST" action="{{ url_for('social.toggle_like', post_id=post.id) }}" style="display: inline;">
                             <button type="submit" class="pin-button">
-                                {% if post.likes.filter_by(user_id=current_user.id, terminated_at=None).first() %}❤️{% else %}🤍{% endif %}
-                                <span class="pin-likes-count">{{ post.likes.filter_by(terminated_at=None).count() }}</span>
+                                {% if post.likes.filter(Like.user_id == current_user.id, Like.terminated_at == None).first() %}❤️{% else %}🤍{% endif %}
+                                <span class="pin-likes-count">{{ post.likes.filter(Like.terminated_at == None).count() }}</span>
                             </button>
                         </form>
                     </div>

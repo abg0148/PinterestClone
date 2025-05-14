@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from app import db
-from app.models import Board, Pin, Post, FollowStream, Comment
+from app.models import Board, Pin, Post, FollowStream, Comment, Like, FollowStreamBoard
 from sqlalchemy.orm import joinedload
 from sqlalchemy import and_
 from datetime import datetime
@@ -46,7 +46,8 @@ def view_board(board_id):
     return render_template('boards/view.html', 
                          board=board, 
                          pins=pins,
-                         streams=streams)
+                         streams=streams,
+                         Like=Like)
 
 @boards_bp.route('/boards/create', methods=['GET', 'POST'])
 @login_required
@@ -148,24 +149,33 @@ def repin():
         flash("An error occurred while repinning.", "error")
         return redirect(url_for('dashboard.dashboard'))
 
-@boards_bp.route('/pins/<int:pin_id>')
+@boards_bp.route('/boards/delete/<int:board_id>', methods=['POST'])
 @login_required
-def view_pin(pin_id):
-    pin = Pin.query.filter_by(id=pin_id, terminated_at=None).first_or_404()
-    post = Post.query.filter_by(id=pin.post_id, terminated_at=None).first_or_404()
-    board = Board.query.get_or_404(pin.board_id)
+def delete_board(board_id):
+    board = Board.query.filter_by(id=board_id, user_id=current_user.id, terminated_at=None).first_or_404()
     
-    # Get current user's boards for repinning
-    current_user_boards = []
-    if board.user_id != current_user.id:
-        current_user_boards = Board.query.filter_by(
-            user_id=current_user.id,
-            terminated_at=None
-        ).all()
+    try:
+        # Get all active pins in this board
+        pins = Pin.query.filter_by(board_id=board_id, terminated_at=None).all()
+        
+        # Delete each pin properly using our pin.delete() method
+        for pin in pins:
+            pin.delete()
+        
+        # Soft delete the board
+        board.terminated_at = datetime.utcnow()
+        
+        # Mark all follow stream associations as deleted
+        FollowStreamBoard.query.filter_by(
+            board_id=board_id,
+            deleted_at=None
+        ).update({"deleted_at": datetime.utcnow()})
+        
+        db.session.commit()
+        flash("Board deleted successfully.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash("An error occurred while deleting the board.", "error")
+        print(f"Error deleting board: {str(e)}")
     
-    return render_template('boards/view_pin.html',
-                         post=post,
-                         pin=pin,
-                         board=board,
-                         current_user_boards=current_user_boards,
-                         Comment=Comment)
+    return redirect(url_for('boards.list_boards'))

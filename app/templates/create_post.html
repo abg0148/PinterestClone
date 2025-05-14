@@ -138,6 +138,26 @@
         color: var(--text-primary);
         margin: 0 0 16px;
     }
+
+    .disabled-section {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    .error-message {
+        color: var(--error-color);
+        font-size: 14px;
+        margin-top: 4px;
+        display: none;
+    }
+
+    .error .error-message {
+        display: block;
+    }
+
+    .error .form-input {
+        border-color: var(--error-color);
+    }
 </style>
 {% endblock %}
 
@@ -197,33 +217,4 @@
         <button type="submit" class="submit-button">Create Pin</button>
     </form>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const imageUrlInput = document.getElementById('image_url');
-    const sourcePageInput = document.getElementById('source_page');
-    const imageFileInput = document.getElementById('image_blob');
-
-    // When image URL is entered, make source page required
-    imageUrlInput.addEventListener('input', function() {
-        if (this.value.trim()) {
-            sourcePageInput.required = true;
-            imageFileInput.required = false;
-        } else {
-            sourcePageInput.required = false;
-            imageFileInput.required = !sourcePageInput.value.trim();
-        }
-    });
-
-    // When file is selected, make source page optional
-    imageFileInput.addEventListener('change', function() {
-        if (this.files.length > 0) {
-            sourcePageInput.required = false;
-            imageUrlInput.required = false;
-        } else {
-            imageUrlInput.required = !sourcePageInput.value.trim();
-        }
-    });
-});
-</script>
 {% endblock %}
