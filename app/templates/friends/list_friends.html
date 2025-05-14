@@ -1,22 +1,90 @@
-{% extends "base.html" %}
+{% extends "base_authenticated.html" %}
+{% from "components/user_tile.html" import user_tile, user_tile_styles %}
+
 {% block title %}Your Friends{% endblock %}
 
+{% block extra_styles %}
+<style>
+    .friends-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    .friends-header {
+        margin-bottom: 32px;
+    }
+
+    .friends-title {
+        font-size: 32px;
+        font-weight: 600;
+        color: #333;
+        margin: 0;
+    }
+
+    .friends-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 24px;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .friend-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .friend-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    .empty-message {
+        text-align: center;
+        color: #666;
+        font-size: 16px;
+        margin-top: 48px;
+    }
+
+    .back-link {
+        display: inline-block;
+        color: #666;
+        text-decoration: none;
+        margin-top: 24px;
+        font-size: 16px;
+        transition: color 0.2s ease;
+    }
+
+    .back-link:hover {
+        color: #e60023;
+    }
+</style>
+{{ user_tile_styles() }}
+{% endblock %}
+
 {% block content %}
-<h2>Your Friends</h2>
+<div class="friends-container">
+    <div class="friends-header">
+        <h1 class="friends-title">My Friends</h1>
+    </div>
 
-{% if friends %}
-  <ul>
-    {% for friend in friends %}
-      <li>
-        <strong>Username:</strong> <a href="{{ url_for('profile.view_profile', user_id=friend.id) }}">{{ friend.username }}</a><br>
-        <strong>Email:</strong> {{ friend.email }}<br>
-      </li>
-    {% endfor %}
-  </ul>
-{% else %}
-  <p>You have no friends yet.</p>
-{% endif %}
+    {% if friends %}
+        <ul class="friends-grid">
+            {% for friend in friends %}
+                <li class="friend-card">
+                    {{ user_tile(friend) }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="empty-message">You have no friends yet.</p>
+    {% endif %}
 
-<p><a href="{{ url_for('dashboard.dashboard') }}">Back to Dashboard</a></p>
-
+    <a href="{{ url_for('dashboard.dashboard') }}" class="back-link">← Back to Dashboard</a>
+</div>
 {% endblock %}

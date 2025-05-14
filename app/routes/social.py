@@ -4,6 +4,7 @@ from app import db
 from app.models import Like, Comment, Post, Pin, Board, User
 from datetime import datetime
 from sqlalchemy import and_
+from urllib.parse import urlparse, parse_qs
 
 social_bp = Blueprint('social', __name__)
 
@@ -54,11 +55,21 @@ def toggle_like(post_id):
         flash("Error updating like status.", "error")
         print(f"Like error: {str(e)}")
 
-    # Get the board_id to redirect back to the board view
+    # Get the pin to determine where to redirect
     pin = Pin.query.filter_by(post_id=post_id, terminated_at=None).first()
-    if pin:
-        return redirect(url_for('boards.view_board', board_id=pin.board_id))
-    return redirect(url_for('dashboard.dashboard'))
+    if not pin:
+        return redirect(url_for('dashboard.dashboard'))
+
+    # Check if the request came from a pin view
+    referer = request.headers.get('Referer')
+    if referer:
+        parsed_url = urlparse(referer)
+        path = parsed_url.path
+        if '/pins/' in path:
+            return redirect(url_for('pins.view_pin', pin_id=pin.id))
+    
+    # Default to board view
+    return redirect(url_for('boards.view_board', board_id=pin.board_id))
 
 @social_bp.route('/pin/<int:pin_id>/comment', methods=['POST'])
 @login_required
@@ -75,12 +86,12 @@ def add_comment(pin_id):
     
     if not can_comment:
         flash("Comments are not allowed on this board.", "error")
-        return redirect(url_for('boards.view_board', board_id=board.id))
+        return redirect(url_for('pins.view_pin', pin_id=pin.id))
 
     comment_text = request.form.get('comment', '').strip()
     if not comment_text:
         flash("Comment cannot be empty.", "error")
-        return redirect(url_for('boards.view_board', board_id=board.id))
+        return redirect(url_for('pins.view_pin', pin_id=pin.id))
 
     new_comment = Comment(
         pin_id=pin_id,
@@ -97,6 +108,15 @@ def add_comment(pin_id):
         flash("Error adding comment.", "error")
         print(e)
 
+    # Check if the request came from a pin view
+    referer = request.headers.get('Referer')
+    if referer:
+        parsed_url = urlparse(referer)
+        path = parsed_url.path
+        if '/pins/' in path:
+            return redirect(url_for('pins.view_pin', pin_id=pin.id))
+    
+    # Default to board view
     return redirect(url_for('boards.view_board', board_id=board.id))
 
 @social_bp.route('/comment/<int:comment_id>/delete', methods=['POST'])
@@ -110,7 +130,7 @@ def delete_comment(comment_id):
     
     if comment.user_id != current_user.id and board.user_id != current_user.id:
         flash("You don't have permission to delete this comment.", "error")
-        return redirect(url_for('boards.view_board', board_id=board.id))
+        return redirect(url_for('pins.view_pin', pin_id=pin.id))
 
     try:
         comment.deleted_at = datetime.utcnow()
@@ -121,4 +141,13 @@ def delete_comment(comment_id):
         flash("Error deleting comment.", "error")
         print(e)
 
+    # Check if the request came from a pin view
+    referer = request.headers.get('Referer')
+    if referer:
+        parsed_url = urlparse(referer)
+        path = parsed_url.path
+        if '/pins/' in path:
+            return redirect(url_for('pins.view_pin', pin_id=pin.id))
+    
+    # Default to board view
     return redirect(url_for('boards.view_board', board_id=board.id)) 

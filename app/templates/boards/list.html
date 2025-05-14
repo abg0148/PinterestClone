@@ -1,28 +1,150 @@
-{% extends "base.html" %}
+{% extends "base_authenticated.html" %}
 {% block title %}My Boards{% endblock %}
 
+{% block extra_styles %}
+<style>
+    .boards-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    .boards-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+    }
+
+    .boards-title {
+        font-size: 32px;
+        font-weight: 600;
+        color: #333;
+        margin: 0;
+    }
+
+    .create-board-button {
+        background-color: #e60023;
+        color: white;
+        border: none;
+        border-radius: 24px;
+        padding: 12px 24px;
+        font-size: 16px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: background-color 0.2s ease;
+    }
+
+    .create-board-button:hover {
+        background-color: #d50021;
+    }
+
+    .boards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 24px;
+    }
+
+    .board-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .board-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    .board-name {
+        font-size: 20px;
+        font-weight: 600;
+        color: #333;
+        margin: 0 0 8px;
+        text-decoration: none;
+    }
+
+    .board-name:hover {
+        color: #e60023;
+    }
+
+    .board-description {
+        color: #666;
+        font-size: 14px;
+        margin: 0 0 16px;
+        line-height: 1.4;
+    }
+
+    .board-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 14px;
+        color: #666;
+    }
+
+    .board-privacy {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .board-actions {
+        display: flex;
+        gap: 12px;
+    }
+
+    .board-action-link {
+        color: #666;
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .board-action-link:hover {
+        color: #e60023;
+    }
+
+    .empty-message {
+        text-align: center;
+        color: #666;
+        font-size: 16px;
+        margin-top: 48px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<h2>Your Boards</h2>
+<div class="boards-container">
+    <div class="boards-header">
+        <h1 class="boards-title">My Boards</h1>
+        <a href="{{ url_for('boards.create_board') }}" class="create-board-button">Create board</a>
+    </div>
 
-<a href="{{ url_for('boards.create_board') }}">Create New Board</a>
-<br><br>
-
-{% if boards %}
-    <ul>
-    {% for board in boards %}
-        <li>
-            <strong>{{ board.board_name }}</strong>
-            {% if board.description %} — {{ board.description }}{% endif %}
-            <br>
-            <small>
-                Comments: {{ 'Public' if board.allow_public_comments else 'Friends Only' }} |
-                <a href="{{ url_for('boards.edit_board', board_id=board.id) }}">Edit</a>
-            </small>
-        </li>
-        <br>
-    {% endfor %}
-    </ul>
-{% else %}
-    <p>No boards created yet.</p>
-{% endif %}
+    {% if boards %}
+        <div class="boards-grid">
+            {% for board in boards %}
+                <div class="board-card">
+                    <a href="{{ url_for('boards.view_board', board_id=board.id) }}" class="board-name">
+                        {{ board.board_name }}
+                    </a>
+                    {% if board.description %}
+                        <p class="board-description">{{ board.description }}</p>
+                    {% endif %}
+                    <div class="board-meta">
+                        <div class="board-privacy">
+                            <span>{{ 'Public' if board.allow_public_comments else 'Friends Only' }} comments</span>
+                        </div>
+                        <div class="board-actions">
+                            <a href="{{ url_for('boards.edit_board', board_id=board.id) }}" class="board-action-link">Edit</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="empty-message">No boards created yet.</p>
+    {% endif %}
+</div>
 {% endblock %}

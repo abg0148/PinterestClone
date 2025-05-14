@@ -1,31 +1,131 @@
-{% extends "base.html" %}
+{% extends "base_authenticated.html" %}
+{% from "components/user_tile.html" import user_tile, user_tile_styles %}
+
 {% block title %}Friend Requests{% endblock %}
 
+{% block extra_styles %}
+{{ user_tile_styles() }}
+<style>
+    .requests-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    .requests-header {
+        margin-bottom: 32px;
+    }
+
+    .requests-title {
+        font-size: 32px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .requests-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .request-card {
+        background: var(--card-background);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 16px;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .request-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .request-actions {
+        display: flex;
+        gap: 12px;
+    }
+
+    .action-button {
+        border: none;
+        border-radius: 24px;
+        padding: 8px 20px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .accept-button {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .accept-button:hover {
+        background-color: var(--primary-hover);
+    }
+
+    .reject-button {
+        background-color: var(--border-color);
+        color: var(--text-primary);
+    }
+
+    .reject-button:hover {
+        background-color: #d0d0d0;
+    }
+
+    .empty-message {
+        text-align: center;
+        color: var(--text-secondary);
+        font-size: 16px;
+        margin-top: 48px;
+        padding: 32px;
+        background: var(--card-background);
+        border-radius: 16px;
+        box-shadow: var(--shadow-sm);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<h2>Pending Friend Requests</h2>
+<div class="requests-container">
+    <div class="requests-header">
+        <h1 class="requests-title">Friend Requests</h1>
+    </div>
 
-{% if requests %}
-  <ul>
-    {% for req in requests %}
-      <li>
-        <strong>{{ req.username }}</strong> ({{ req.email }})
-        <form method="POST" action="{{ url_for('friends.friend_request_response') }}" style="display: inline;">
-          <input type="hidden" name="from_id" value="{{ req.from_id }}">
-          <input type="hidden" name="to_id" value="{{ current_user.id }}">
-          <input type="hidden" name="response" value="accepted">
-          <button type="submit">Accept</button>
-        </form>
-        <form method="POST" action="{{ url_for('friends.friend_request_response') }}" style="display: inline;">
-          <input type="hidden" name="from_id" value="{{ req.from_id }}">
-          <input type="hidden" name="to_id" value="{{ current_user.id }}">
-          <input type="hidden" name="response" value="declined">
-          <button type="submit">Reject</button>
-        </form>
-      </li>
-    {% endfor %}
-  </ul>
-{% else %}
-  <p>No pending friend requests.</p>
-{% endif %}
-
+    {% if requests %}
+        <ul class="requests-list">
+            {% for req in requests %}
+                <li class="request-card">
+                    <div class="user-info">
+                        {{ user_tile(req) }}
+                    </div>
+                    <div class="request-actions">
+                        <form method="POST" action="{{ url_for('friends.friend_request_response') }}" style="display: inline;">
+                            <input type="hidden" name="from_id" value="{{ req.from_id }}">
+                            <input type="hidden" name="to_id" value="{{ current_user.id }}">
+                            <input type="hidden" name="response" value="accepted">
+                            <button type="submit" class="action-button accept-button">Accept</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('friends.friend_request_response') }}" style="display: inline;">
+                            <input type="hidden" name="from_id" value="{{ req.from_id }}">
+                            <input type="hidden" name="to_id" value="{{ current_user.id }}">
+                            <input type="hidden" name="response" value="declined">
+                            <button type="submit" class="action-button reject-button">Reject</button>
+                        </form>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <div class="empty-message">
+            <p>No pending friend requests.</p>
+        </div>
+    {% endif %}
+</div>
 {% endblock %}

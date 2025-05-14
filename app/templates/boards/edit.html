@@ -1,20 +1,145 @@
-{% extends "base.html" %}
+{% extends "base_authenticated.html" %}
 {% block title %}Edit Board{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .edit-board-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    .edit-board-header {
+        margin-bottom: 32px;
+    }
+
+    .edit-board-title {
+        font-size: 32px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 16px;
+    }
+
+    .edit-board-form {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .form-group {
+        margin-bottom: 24px;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 16px;
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 8px;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: border-color 0.2s ease;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #666;
+    }
+
+    textarea.form-input {
+        min-height: 120px;
+        resize: vertical;
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .checkbox-input {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+
+    .submit-button {
+        background-color: #e60023;
+        color: white;
+        border: none;
+        border-radius: 24px;
+        padding: 12px 24px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .submit-button:hover {
+        background-color: #d50021;
+    }
+
+    .cancel-button {
+        background-color: #efefef;
+        color: #333;
+        border: none;
+        border-radius: 24px;
+        padding: 12px 24px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        text-decoration: none;
+        margin-right: 16px;
+        transition: background-color 0.2s ease;
+    }
+
+    .cancel-button:hover {
+        background-color: #e0e0e0;
+    }
+
+    .form-actions {
+        display: flex;
+        align-items: center;
+        margin-top: 32px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<h2>Edit Board</h2>
+<div class="edit-board-container">
+    <div class="edit-board-header">
+        <h1 class="edit-board-title">Edit board</h1>
+    </div>
 
-<form method="POST">
-    <label>Board Name:</label><br>
-    <input type="text" name="name" value="{{ board.board_name }}" required><br><br>
+    <form method="POST" class="edit-board-form">
+        <div class="form-group">
+            <label class="form-label" for="name">Board name</label>
+            <input type="text" id="name" name="name" class="form-input" value="{{ board.board_name }}" required>
+        </div>
 
-    <label>Description:</label><br>
-    <textarea name="description">{{ board.description }}</textarea><br><br>
+        <div class="form-group">
+            <label class="form-label" for="description">Description</label>
+            <textarea id="description" name="description" class="form-input" placeholder="What's your board about?">{{ board.description }}</textarea>
+        </div>
 
-    <label>
-        <input type="checkbox" name="allow_comments" {% if board.allow_public_comments %}checked{% endif %}>
-        Allow Public Comments
-    </label><br><br>
+        <div class="form-group">
+            <div class="checkbox-group">
+                <input type="checkbox" id="allow_comments" name="allow_comments" class="checkbox-input" {% if board.allow_public_comments %}checked{% endif %}>
+                <label class="form-label" for="allow_comments" style="margin-bottom: 0">Allow public comments</label>
+            </div>
+        </div>
 
-    <input type="submit" value="Update Board">
-</form>
+        <div class="form-actions">
+            <a href="{{ url_for('boards.view_board', board_id=board.id) }}" class="cancel-button">Cancel</a>
+            <button type="submit" class="submit-button">Save</button>
+        </div>
+    </form>
+</div>
 {% endblock %}

@@ -78,6 +78,9 @@ class Board(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     terminated_at = db.Column(db.DateTime)
 
+    # Add relationship with User
+    user = db.relationship('User', backref='boards')
+
     __table_args__ = (db.UniqueConstraint('user_id', 'board_name'),)
 
 

@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from app import db
-from app.models import Board, Pin, Post, FollowStream
+from app.models import Board, Pin, Post, FollowStream, Comment
 from sqlalchemy.orm import joinedload
 from sqlalchemy import and_
 from datetime import datetime
@@ -17,41 +17,36 @@ def list_boards():
 @boards_bp.route('/boards/<int:board_id>')
 @login_required
 def view_board(board_id):
-    # Get the board without checking user_id to allow viewing other people's boards
-    board = Board.query.filter_by(id=board_id, terminated_at=None).first_or_404()
-    pins_with_posts = (
+    """View a board and its pins."""
+    board = Board.query.get_or_404(board_id)
+    
+    # Get all active pins for this board
+    pins = (
         db.session.query(Pin, Post)
-        .join(Post, and_(Pin.post_id == Post.id, Post.terminated_at == None))
+        .join(Post)
         .filter(
             Pin.board_id == board_id,
-            Pin.terminated_at == None
+            Pin.terminated_at == None,
+            Post.terminated_at == None
         )
-        .order_by(Pin.created_at.desc())
+        .order_by(Post.created_at.desc())
         .all()
     )
 
-    # Get current user's boards for repinning and streams for adding board
-    current_user_boards = []
-    current_user_streams = []
+    # If viewing someone else's board, get current user's follow streams
+    streams = None
+    if board.user_id != current_user.id:
+        streams = (
+            FollowStream.query
+            .filter_by(user_id=current_user.id, terminated_at=None)
+            .order_by(FollowStream.stream_name)
+            .all()
+        )
     
-    if board.user_id != current_user.id:  # Only get boards if viewing someone else's board
-        current_user_boards = Board.query.filter_by(
-            user_id=current_user.id,
-            terminated_at=None
-        ).all()
-        
-        # Get current user's streams for adding board to stream
-        current_user_streams = FollowStream.query.filter_by(
-            user_id=current_user.id,
-            terminated_at=None
-        ).all()
-
     return render_template('boards/view.html', 
-                         pins=pins_with_posts, 
-                         board=board,
-                         current_user_boards=current_user_boards,
-                         current_user_streams=current_user_streams)
-
+                         board=board, 
+                         pins=pins,
+                         streams=streams)
 
 @boards_bp.route('/boards/create', methods=['GET', 'POST'])
 @login_required
@@ -152,3 +147,25 @@ def repin():
         print(f"Error repinning: {str(e)}")
         flash("An error occurred while repinning.", "error")
         return redirect(url_for('dashboard.dashboard'))
+
+@boards_bp.route('/pins/<int:pin_id>')
+@login_required
+def view_pin(pin_id):
+    pin = Pin.query.filter_by(id=pin_id, terminated_at=None).first_or_404()
+    post = Post.query.filter_by(id=pin.post_id, terminated_at=None).first_or_404()
+    board = Board.query.get_or_404(pin.board_id)
+    
+    # Get current user's boards for repinning
+    current_user_boards = []
+    if board.user_id != current_user.id:
+        current_user_boards = Board.query.filter_by(
+            user_id=current_user.id,
+            terminated_at=None
+        ).all()
+    
+    return render_template('boards/view_pin.html',
+                         post=post,
+                         pin=pin,
+                         board=board,
+                         current_user_boards=current_user_boards,
+                         Comment=Comment)

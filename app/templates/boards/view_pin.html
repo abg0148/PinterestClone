@@ -1,0 +1,315 @@
+{% extends "base_authenticated.html" %}
+
+{% block title %}{{ post.tags.split(',')[0] }}{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .pin-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    .pin-content {
+        display: flex;
+        gap: 48px;
+        margin-bottom: 48px;
+    }
+
+    .pin-image-container {
+        flex: 1;
+        max-width: 65%;
+    }
+
+    .pin-image {
+        width: 100%;
+        border-radius: 24px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .pin-details {
+        flex: 1;
+        max-width: 35%;
+    }
+
+    .pin-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 24px;
+    }
+
+    .pin-tag {
+        background: #efefef;
+        padding: 4px 12px;
+        border-radius: 16px;
+        font-size: 14px;
+        color: #666;
+    }
+
+    .pin-meta {
+        margin-bottom: 24px;
+    }
+
+    .pin-stats {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .pin-likes {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .pin-likes-count {
+        font-weight: 500;
+    }
+
+    .pin-info {
+        color: #666;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    .pin-info p {
+        margin: 4px 0;
+    }
+
+    .pin-date {
+        font-size: 14px;
+        color: #666;
+    }
+
+    .pin-board {
+        margin-bottom: 24px;
+    }
+
+    .board-link {
+        color: #333;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .board-link:hover {
+        color: #e60023;
+    }
+
+    .pin-actions {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+
+    .pin-button {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        background: #efefef;
+        color: #333;
+        text-decoration: none;
+        transition: background-color 0.2s;
+    }
+
+    .pin-button:hover {
+        background-color: #e0e0e0;
+    }
+
+    .pin-button.primary {
+        background-color: #e60023;
+        color: white;
+    }
+
+    .pin-button.primary:hover {
+        background-color: #d50021;
+    }
+
+    .repin-form {
+        margin-bottom: 24px;
+    }
+
+    .repin-form select {
+        width: 100%;
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        margin-bottom: 8px;
+    }
+
+    .comments-section {
+        margin-top: 48px;
+        border-top: 1px solid #efefef;
+        padding-top: 24px;
+    }
+
+    .comments-header {
+        font-size: 18px;
+        font-weight: 500;
+        margin-bottom: 24px;
+        color: #333;
+    }
+
+    .comment-form {
+        margin-bottom: 24px;
+    }
+
+    .comment-input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        margin-bottom: 12px;
+        font-size: 14px;
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .comment-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .comment-item {
+        margin-bottom: 24px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid #efefef;
+    }
+
+    .comment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .comment-author {
+        font-weight: 500;
+        color: #333;
+    }
+
+    .comment-date {
+        font-size: 12px;
+        color: #666;
+    }
+
+    .comment-body {
+        font-size: 14px;
+        line-height: 1.5;
+        color: #333;
+    }
+
+    .comment-actions {
+        margin-top: 8px;
+    }
+
+    .delete-comment {
+        background: none;
+        border: none;
+        color: #e60023;
+        font-size: 12px;
+        cursor: pointer;
+        padding: 0;
+    }
+
+    .delete-comment:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pin-container">
+    <div class="pin-content">
+        <div class="pin-image-container">
+            <img src="{{ post.image_url }}" alt="Pin image" class="pin-image">
+        </div>
+        
+        <div class="pin-details">
+            {% if post.tags %}
+                <div class="pin-tags">
+                    {% for tag in post.tags.split(',') %}
+                        <span class="pin-tag">{{ tag.strip() }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <div class="pin-meta">
+                <div class="pin-stats">
+                    <div class="pin-likes">
+                        <form method="POST" action="{{ url_for('social.toggle_like', post_id=post.id) }}" style="display: inline;">
+                            <button type="submit" class="pin-button">
+                                {% if post.likes.filter_by(user_id=current_user.id, terminated_at=None).first() %}❤️{% else %}🤍{% endif %}
+                                <span class="pin-likes-count">{{ post.likes.filter_by(terminated_at=None).count() }}</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <div class="pin-info">
+                    <p>Posted at: {{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    <p>Author: {{ post.author.username }}</p>
+                </div>
+            </div>
+
+            <div class="pin-actions">
+                {% if post.source_page %}
+                    <a href="{{ post.source_page }}" target="_blank" class="pin-button">View Original</a>
+                {% endif %}
+            </div>
+
+            {% if board.user_id != current_user.id %}
+                <form method="POST" action="{{ url_for('boards.repin') }}" class="repin-form">
+                    <input type="hidden" name="post_id" value="{{ post.id }}">
+                    <input type="hidden" name="source_pin_id" value="{{ pin.id }}">
+                    <select name="board_id" required>
+                        <option value="">Select a board to pin to...</option>
+                        {% for user_board in current_user_boards %}
+                            <option value="{{ user_board.id }}">{{ user_board.board_name }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="pin-button primary">Repin</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="comments-section">
+        <h3 class="comments-header">Comments</h3>
+        
+        {% if board.allow_public_comments or board.user_id == current_user.id or current_user.is_friend_with(board.user_id) %}
+            <form method="POST" action="{{ url_for('social.add_comment', pin_id=pin.id) }}" class="comment-form">
+                <textarea name="comment" placeholder="Add a comment..." class="comment-input" required></textarea>
+                <button type="submit" class="pin-button primary">Post Comment</button>
+            </form>
+        {% else %}
+            <p>Comments are only allowed for friends on this board.</p>
+        {% endif %}
+
+        <ul class="comment-list">
+            {% for comment in pin.comments.filter_by(deleted_at=None).order_by(Comment.created_at.desc()).all() %}
+                <li class="comment-item">
+                    <div class="comment-header">
+                        <span class="comment-author">{{ comment.author.username }}</span>
+                        <span class="comment-date">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    </div>
+                    <p class="comment-body">{{ comment.body }}</p>
+                    {% if comment.user_id == current_user.id or board.user_id == current_user.id %}
+                        <div class="comment-actions">
+                            <form method="POST" action="{{ url_for('social.delete_comment', comment_id=comment.id) }}" style="display: inline;">
+                                <button type="submit" class="delete-comment">Delete</button>
+                            </form>
+                        </div>
+                    {% endif %}
+                </li>
+            {% else %}
+                <li>No comments yet.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %} 

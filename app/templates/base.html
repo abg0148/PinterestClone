@@ -20,8 +20,9 @@
                 <a href="{{ url_for('friends.list_request') }}">Friend Requests</a> |
             {% endif %}
 
-            <form method="POST" action="{{ url_for('friends.search_user')}}" style="display: inline;">
-                <input type="text" name="identifier" placeholder="Search users..." required>
+            <form method="GET" action="{{ url_for('friends.search') }}" style="display: inline;">
+                <input type="text" name="q" placeholder="Search..." required>
+                <input type="hidden" name="type" value="all">
                 <button type="submit">Search</button>
             </form> |
             

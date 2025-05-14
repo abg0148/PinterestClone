@@ -1,0 +1,118 @@
+{% macro pin_tile(post, pin, user, show_board=False, board=None) %}
+<a href="{{ url_for('pins.view_pin', pin_id=pin.id) }}" class="pin-tile">
+    <img src="{{ post.image_url }}" alt="Pin image" class="pin-image">
+    <div class="pin-overlay">
+        <div class="pin-tags">
+            {{ post.tags }}
+        </div>
+        <div class="pin-info">
+            <div class="pin-author">
+                <img src="{{ url_for('profile.profile_picture', user_id=user.id) }}" 
+                     alt="{{ user.username }}" 
+                     class="author-avatar">
+                <span>{{ user.username }}</span>
+            </div>
+            {% if show_board and board %}
+            <div class="pin-board">
+                <span>{{ board.board_name }}</span>
+            </div>
+            {% endif %}
+            <div class="pin-stats">
+                <div class="pin-likes">
+                    <span>❤️</span>
+                    <span>{{ post.likes.filter_by(terminated_at=None).count() }}</span>
+                </div>
+                <div class="pin-comments">
+                    <span>💬</span>
+                    <span>{{ pin.comments.count() }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</a>
+{% endmacro %}
+
+{% macro pin_tile_styles() %}
+<style>
+    .pins-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 24px;
+        margin-top: 24px;
+    }
+
+    .pin-tile {
+        position: relative;
+        border-radius: 16px;
+        overflow: hidden;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .pin-tile:hover {
+        transform: translateY(-4px);
+    }
+
+    .pin-image {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: cover;
+    }
+
+    .pin-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 16px;
+        background: linear-gradient(transparent, rgba(0,0,0,0.7));
+        color: white;
+    }
+
+    .pin-tags {
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+
+    .pin-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 14px;
+    }
+
+    .pin-author {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .author-avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .pin-board {
+        font-size: 12px;
+        opacity: 0.9;
+    }
+
+    .pin-stats {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .pin-likes, .pin-comments {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+</style>
+{% endmacro %} 

@@ -1,20 +1,90 @@
-{% extends "base.html" %}
+{% extends "base_authenticated.html" %}
 
 {% block title %}Edit Profile{% endblock %}
 
+{% block extra_styles %}
+<style>
+    .edit-profile-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    .edit-profile-form {
+        background: white;
+        border-radius: 16px;
+        padding: 32px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .form-group {
+        margin-bottom: 24px;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 500;
+        margin-bottom: 8px;
+    }
+
+    .form-group input[type="text"],
+    .form-group textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 16px;
+    }
+
+    .form-group textarea {
+        min-height: 120px;
+        resize: vertical;
+    }
+
+    .form-group input[type="file"] {
+        display: block;
+        margin-top: 8px;
+    }
+
+    .submit-button {
+        background-color: #e60023;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 24px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .submit-button:hover {
+        background-color: #d50021;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<h2>Edit Profile</h2>
+<div class="edit-profile-container">
+    <h1>Edit Profile</h1>
 
-<form method="POST" enctype="multipart/form-data">
-    <label>Full Name:</label><br>
-    <input type="text" name="full_name" value="{{ user.full_name }}"><br><br>
+    <form method="POST" enctype="multipart/form-data" class="edit-profile-form">
+        <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" name="full_name" value="{{ user.full_name }}">
+        </div>
 
-    <label>Bio:</label><br>
-    <textarea name="bio" rows="5" cols="40">{{ user.bio }}</textarea><br><br>
+        <div class="form-group">
+            <label>Bio</label>
+            <textarea name="bio">{{ user.bio }}</textarea>
+        </div>
 
-    <label>Profile Picture:</label><br>
-    <input type="file" name="picture" accept="image/*"><br><br>
+        <div class="form-group">
+            <label>Profile Picture</label>
+            <input type="file" name="picture" accept="image/*">
+        </div>
 
-    <input type="submit" value="Save Changes">
-</form>
+        <button type="submit" class="submit-button">Save Changes</button>
+    </form>
+</div>
 {% endblock %}

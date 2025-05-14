@@ -1,63 +1,235 @@
-{% extends "base.html" %}
+{% extends "base_authenticated.html" %}
+{% from "components/pin_tile.html" import pin_tile, pin_tile_styles %}
+{% from "components/user_tile.html" import user_tile, user_tile_styles %}
+
 {% block title %}Search Results{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .search-section {
+        margin: 24px 0;
+    }
+
+    .search-results-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .search-result-item {
+        display: flex;
+        align-items: center;
+        padding: 16px;
+        border-radius: 12px;
+        background: white;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .profile-thumbnail {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        margin-right: 16px;
+        object-fit: cover;
+    }
+
+    .result-details {
+        flex: 1;
+    }
+
+    .user-full-name {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0 0 4px;
+        color: #333;
+    }
+
+    .user-username {
+        font-size: 14px;
+        color: #666;
+        margin: 0;
+        display: block;
+    }
+
+    /* Pin Grid Styles */
+    .pins-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 24px;
+        margin-top: 24px;
+    }
+
+    .pin-tile {
+        position: relative;
+        border-radius: 16px;
+        overflow: hidden;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+        cursor: pointer;
+    }
+
+    .pin-tile:hover {
+        transform: translateY(-4px);
+    }
+
+    .pin-image {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: cover;
+    }
+
+    .pin-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 16px;
+        background: linear-gradient(transparent, rgba(0,0,0,0.7));
+        color: white;
+    }
+
+    .pin-tags {
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+
+    .pin-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 14px;
+    }
+
+    .pin-author {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .author-avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .pin-stats {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .pin-likes {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .pin-comments {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .repin-form {
+        margin-top: 1rem;
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .repin-form select {
+        flex: 1;
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    .repin-form button {
+        padding: 0.5rem 1rem;
+        background-color: #e60023;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .repin-form button:hover {
+        background-color: #d50021;
+    }
+
+    .edit-link {
+        color: #666;
+        text-decoration: none;
+        font-size: 0.9em;
+    }
+
+    .edit-link:hover {
+        text-decoration: underline;
+    }
+</style>
+{{ pin_tile_styles() }}
+{{ user_tile_styles() }}
+{% endblock %}
 
 {% block content %}
 <h2>Search Results for "{{ search_term }}"</h2>
 
 <!-- Users Section -->
-<h3>Users</h3>
-{% if users %}
-    {% if search_type == "partial" %}
-        <p>No exact username matches found. Showing similar usernames:</p>
-    {% endif %}
-    <ul>
-        {% for user in users %}
-        <li>
-            <strong><a href="{{ url_for('profile.view_profile', user_id=user.id) }}">{{ user.username }}</a></strong> ({{ user.email }})
-        </li>
-        {% endfor %}
-    </ul>
-{% else %}
-    {% if search_type == "partial" %}
-        <p>No usernames found containing "{{ search_term }}"</p>
+{% if search_type in ['all', 'users'] %}
+<section class="search-section">
+    <h3>Users</h3>
+    {% if users %}
+        <ul class="user-grid">
+            {% for user in users %}
+            <li>
+                {{ user_tile(user) }}
+            </li>
+            {% endfor %}
+        </ul>
     {% else %}
-        <p>No exact username matches found for "{{ search_term }}"</p>
+        <p>No users found matching "{{ search_term }}"</p>
     {% endif %}
+</section>
 {% endif %}
 
 <!-- Posts Section -->
-<h3>Posts</h3>
-{% if posts %}
-    <ul>
-        {% for post, pin, board, user in posts %}
-        <li>
-            <img src="{{ post.image_url }}" alt="Post image" width="150"><br>
-            <strong>Tags:</strong> {{ post.tags }}<br>
-            <strong>Board:</strong> <a href="{{ url_for('boards.view_board', board_id=board.id) }}">{{ board.board_name }}</a><br>
-            <strong>Posted by:</strong> <a href="{{ url_for('profile.view_profile', user_id=user.id) }}">{{ user.username }}</a><br>
-            {% if post.source_page %}
-                <strong>Source:</strong> <a href="{{ post.source_page }}" target="_blank">Original</a><br>
-            {% endif %}
-            
-            <!-- Repin Form -->
-            {% if user.id != current_user.id %}
-                <form method="POST" action="{{ url_for('boards.repin') }}" style="margin-top: 10px;">
-                    <input type="hidden" name="post_id" value="{{ post.id }}">
-                    <input type="hidden" name="source_pin_id" value="{{ pin.id }}">
-                    <select name="board_id" required>
-                        <option value="">Select a board to pin to...</option>
-                        {% for user_board in current_user_boards %}
-                            <option value="{{ user_board.id }}">{{ user_board.board_name }}</option>
-                        {% endfor %}
-                    </select>
-                    <button type="submit">Repin</button>
-                </form>
-            {% endif %}
-        </li>
-        <br>
-        {% endfor %}
-    </ul>
-{% else %}
-    <p>No posts found with tags containing "{{ search_term }}"</p>
+{% if search_type in ['all', 'pins'] %}
+<section class="search-section">
+    <h3>Pins</h3>
+    {% if posts %}
+        <div class="pins-grid">
+            {% for post, pin, board, user in posts %}
+                {{ pin_tile(post, pin, user, True, board) }}
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No pins found with tags containing "{{ search_term }}"</p>
+    {% endif %}
+</section>
+{% endif %}
+
+<!-- Streams Section -->
+{% if search_type in ['all', 'streams'] %}
+<section class="search-section">
+    <h3>Follow Streams</h3>
+    {% if streams %}
+        <ul class="search-results-list">
+            {% for stream in streams %}
+            <li class="search-result-item">
+                <div class="result-details">
+                    <strong><a href="{{ url_for('follow_streams.view_stream', stream_id=stream.id) }}">{{ stream.stream_name }}</a></strong>
+                    <div class="actions">
+                        <a href="{{ url_for('follow_streams.edit_stream', stream_id=stream.id) }}" class="edit-link">Edit</a>
+                    </div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No streams found matching "{{ search_term }}"</p>
+    {% endif %}
+</section>
 {% endif %}
 {% endblock %} 

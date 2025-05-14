@@ -18,6 +18,9 @@ def create_app():
     migrate.init_app(app, db)
     login_manager.init_app(app)
 
+    # Set login view
+    login_manager.login_view = 'auth.index'
+
     # Import models after app is created to avoid circular imports
     from app.models import User
 
@@ -35,9 +38,10 @@ def create_app():
     from app.routes.friends import friends_bp
     from app.routes.follow_streams import follow_streams_bp
     from app.routes.dashboard import dashboard_bp
+    from app.routes.pins import pins_bp
 
     # Register all blueprints
-    app.register_blueprint(auth_bp)
+    app.register_blueprint(auth_bp, url_prefix='')  # Register at root URL
     app.register_blueprint(profile_bp)
     app.register_blueprint(boards_bp)
     app.register_blueprint(posts_bp)
@@ -45,6 +49,7 @@ def create_app():
     app.register_blueprint(friends_bp)
     app.register_blueprint(follow_streams_bp)
     app.register_blueprint(dashboard_bp)
+    app.register_blueprint(pins_bp)
 
     # Add no-cache headers for authenticated users
     @app.after_request

@@ -1,44 +1,194 @@
-{% extends "base.html" %}
+{% extends "base_authenticated.html" %}
+{% from "components/pin_tile.html" import pin_tile, pin_tile_styles %}
 
 {% block title %}{{ stream.stream_name }}{% endblock %}
 
+{% block extra_styles %}
+<style>
+    .stream-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    .stream-header {
+        margin-bottom: 32px;
+        padding: 0 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .stream-title {
+        font-size: 28px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .edit-stream-button {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 24px;
+        padding: 12px 24px;
+        font-size: 15px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .edit-stream-button:hover {
+        background-color: var(--primary-hover);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .section-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 32px 0 16px;
+        padding: 0 8px;
+    }
+
+    .boards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 16px;
+        padding: 8px;
+    }
+
+    .board-card {
+        background: var(--card-background);
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.2s ease;
+    }
+
+    .board-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .board-name {
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .remove-form {
+        display: inline;
+    }
+
+    .remove-button {
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 50%;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .remove-button:hover {
+        background-color: #f0f2f5;
+        color: var(--primary-color);
+    }
+
+    .empty-message {
+        text-align: center;
+        color: var(--text-secondary);
+        font-size: 15px;
+        margin: 32px auto;
+        max-width: 400px;
+        padding: 32px;
+        background: var(--card-background);
+        border-radius: 16px;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-color);
+    }
+
+    @media (max-width: 768px) {
+        .stream-header {
+            flex-direction: column;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .edit-stream-button {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+{{ pin_tile_styles() }}
+{% endblock %}
+
 {% block content %}
-<h2>{{ stream.stream_name }}</h2>
+<div class="stream-container">
+    <div class="stream-header">
+        <h1 class="stream-title">{{ stream.stream_name }}</h1>
+        <a href="{{ url_for('follow_streams.edit_stream', stream_id=stream.id) }}" class="edit-stream-button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            Edit Stream
+        </a>
+    </div>
 
-<p>
-    <a href="{{ url_for('follow_streams.edit_stream', stream_id=stream.id) }}">Edit Stream</a>
-</p>
+    <h2 class="section-title">Boards in this stream</h2>
+    {% if stream_boards %}
+        <div class="boards-grid">
+            {% for stream_board in stream_boards %}
+                <div class="board-card">
+                    <span class="board-name">{{ stream_board.board.board_name }}</span>
+                    <form method="POST" action="{{ url_for('follow_streams.edit_stream', stream_id=stream.id) }}" class="remove-form">
+                        <input type="hidden" name="board_id" value="{{ stream_board.board_id }}">
+                        <input type="hidden" name="action" value="remove">
+                        <button type="submit" class="remove-button" title="Remove board">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-message">
+            <p>No boards in this stream yet.</p>
+            <p>Add boards to start collecting pins in this stream.</p>
+        </div>
+    {% endif %}
 
-<h3>Boards in this stream:</h3>
-{% if stream_boards %}
-    <ul>
-        {% for stream_board in stream_boards %}
-            <li>
-                {{ stream_board.board.board_name }}
-                <form method="POST" action="{{ url_for('follow_streams.edit_stream', stream_id=stream.id) }}" style="display: inline;">
-                    <input type="hidden" name="board_id" value="{{ stream_board.board_id }}">
-                    <input type="hidden" name="action" value="remove">
-                    <input type="submit" value="Remove">
-                </form>
-            </li>
-        {% endfor %}
-    </ul>
-{% else %}
-    <p>No boards in this stream yet.</p>
-{% endif %}
-
-<h3>Recent Pins:</h3>
-{% if pins %}
-    <ul>
-        {% for pin, post, board in pins %}
-            <li>
-                <img src="{{ post.image_url }}" alt="Pin image" style="max-width: 200px"><br>
-                From board: {{ board.board_name }}<br>
-                {% if post.tags %}Tags: {{ post.tags }}{% endif %}
-            </li>
-        {% endfor %}
-    </ul>
-{% else %}
-    <p>No pins found in the boards of this stream.</p>
-{% endif %}
+    <h2 class="section-title">Recent Pins</h2>
+    {% if pins %}
+        <div class="pins-grid">
+            {% for pin, post, board in pins %}
+                {{ pin_tile(post, pin, post.author, True, board) }}
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-message">
+            <p>No pins found</p>
+            <p>Add boards to this stream to see their pins here.</p>
+        </div>
+    {% endif %}
+</div>
 {% endblock %} 

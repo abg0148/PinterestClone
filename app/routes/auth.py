@@ -1,16 +1,25 @@
 from werkzeug.security import generate_password_hash
 from app import db
 from sqlalchemy.exc import IntegrityError
-from flask import Blueprint, render_template, request, redirect, url_for, flash
-from flask_login import login_user, login_required, logout_user
+from flask import Blueprint, render_template, request, redirect, url_for, flash, get_flashed_messages
+from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.security import check_password_hash
 from app.models import User
 
 auth_bp = Blueprint('auth', __name__)
 
-@auth_bp.route('/signup', methods=['GET', 'POST'])
+@auth_bp.route('/')
+def index():
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard.dashboard'))
+    return render_template('index.html')
+
+@auth_bp.route('/auth/signup', methods=['GET', 'POST'])
 def signup():
-    error = None
+    # If user is logged in, log them out first
+    if current_user.is_authenticated:
+        logout_user()
+        
     if request.method == 'POST':
         username = request.form['username'].strip()
         email = request.form['email'].strip().lower()
@@ -42,37 +51,45 @@ def signup():
                 db.session.rollback()
                 flash("Username or email already taken.", "error")
 
-    return render_template('signup.html', error=error)
-
+    return render_template('signup.html')
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
-    error = None
+    # If user is already logged in, redirect to dashboard
+    if request.method == 'GET':
+        if current_user.is_authenticated:
+            return redirect(url_for('dashboard.dashboard'))
+        return redirect(url_for('auth.index'))
+
     if request.method == 'POST':
-        identifier = request.form['identifier']
+        identifier = request.form['identifier'].strip()
         password = request.form['password']
 
+        # Try to find user by either username or email
         user = User.query.filter(
-            (User.username == identifier) | (User.email == identifier),
+            (User.username == identifier) | (User.email == identifier.lower()),
             User.terminated_at.is_(None)
         ).first()
 
         if user and check_password_hash(user.password_hash, password):
             login_user(user)
-            return redirect(url_for('dashboard.dashboard'))  # Adjust as needed
+            return redirect(url_for('dashboard.dashboard'))
         else:
             flash("Invalid username/email or password.", "error")
-
-    return render_template('login.html', error=error)
-
+            return redirect(url_for('auth.index'))
 
 @auth_bp.route('/logout')
 @login_required
 def logout():
+    # Clear any existing flash messages
+    _ = get_flashed_messages()
+    
+    # Log out the user
     logout_user()
+    
+    # Add logout message
     flash("You have been logged out.", "success")
-    return redirect(url_for('auth.login'))
-
+    return redirect(url_for('auth.index'))
 
 # Create default boards for existing users
 def create_default_boards_for_existing_users():

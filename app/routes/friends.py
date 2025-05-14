@@ -1,43 +1,65 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from app import db
-from app.models import Friend, User, FriendRequest, Post, Pin, Board
+from app.models import Friend, User, FriendRequest, Post, Pin, Board, FollowStream
 from datetime import datetime
 from sqlalchemy import or_, and_
 
 friends_bp = Blueprint('friends', __name__)
 
-@friends_bp.route('/profile/search', methods=['GET', 'POST'])
+@friends_bp.route('/search', methods=['GET'])
 @login_required
-def search_user():
-    search_term = request.form.get("identifier", type=str)
+def search():
+    search_term = request.args.get("q", type=str)
+    search_type = request.args.get("type", "all").lower()
+    
     if not search_term:
-        flash("Bad Request.", "error")
+        flash("Please enter a search term.", "error")
         return redirect(url_for('dashboard.dashboard'))
 
-    # First try exact username match
-    exact_matches = (
-        User.query
-            .filter(User.username == search_term,
-                    User.terminated_at == None,
-                    User.id != current_user.id)
-            .all()
-    )
-
-    # Search for posts by tags
     search_pattern = f"%{search_term}%"
-    matching_posts = (
-        db.session.query(Post, Pin, Board, User)
-        .join(Pin, and_(Post.id == Pin.post_id, Pin.terminated_at == None))
-        .join(Board, and_(Pin.board_id == Board.id, Board.terminated_at == None))
-        .join(User, and_(Board.user_id == User.id, User.terminated_at == None))
-        .filter(
-            Post.tags.ilike(search_pattern),
-            Post.terminated_at == None
+    results = {
+        'users': [],
+        'posts': [],
+        'streams': []
+    }
+
+    # Search users if type is 'all' or 'users'
+    if search_type in ['all', 'users']:
+        results['users'] = (
+            User.query
+                .filter(User.username.ilike(search_pattern),
+                        User.terminated_at == None,
+                        User.id != current_user.id)
+                .all()
         )
-        .order_by(Post.created_at.desc())
-        .all()
-    )
+
+    # Search posts/pins if type is 'all' or 'pins'
+    if search_type in ['all', 'pins']:
+        results['posts'] = (
+            db.session.query(Post, Pin, Board, User)
+            .join(Pin, and_(Post.id == Pin.post_id, Pin.terminated_at == None))
+            .join(Board, and_(Pin.board_id == Board.id, Board.terminated_at == None))
+            .join(User, and_(Board.user_id == User.id, User.terminated_at == None))
+            .filter(
+                Post.tags.ilike(search_pattern),
+                Post.terminated_at == None
+            )
+            .order_by(Post.created_at.desc())
+            .all()
+        )
+
+    # Search streams if type is 'all' or 'streams'
+    if search_type in ['all', 'streams']:
+        results['streams'] = (
+            FollowStream.query
+            .filter(
+                FollowStream.stream_name.ilike(search_pattern),
+                FollowStream.user_id == current_user.id,
+                FollowStream.terminated_at == None
+            )
+            .all()
+        )
 
     # Get current user's boards for repinning
     current_user_boards = Board.query.filter_by(
@@ -45,30 +67,15 @@ def search_user():
         terminated_at=None
     ).all()
 
-    # If no exact username matches, try partial username matches
-    if not exact_matches:
-        # Search for usernames containing the search term anywhere
-        partial_matches = (
-            User.query
-                .filter(User.username.ilike(search_pattern),
-                        User.terminated_at == None,
-                        User.id != current_user.id)
-                .all()
-        )
-        
-        return render_template("search_results.html", 
-                            users=partial_matches,
-                            posts=matching_posts,
-                            search_term=search_term,
-                            search_type="partial",
-                            current_user_boards=current_user_boards)
-    
-    return render_template("search_results.html", 
-                         users=exact_matches,
-                         posts=matching_posts,
-                         search_term=search_term,
-                         search_type="exact",
-                         current_user_boards=current_user_boards)
+    return render_template(
+        "search_results.html",
+        search_term=search_term,
+        search_type=search_type,
+        users=results['users'],
+        posts=results['posts'],
+        streams=results['streams'],
+        current_user_boards=current_user_boards
+    )
 
 @friends_bp.route('/friends/request', methods=['POST'])
 @login_required
@@ -259,14 +266,16 @@ def list_request():
             FriendRequest.query
             .filter_by(receiver_id=current_user.id, status='pending')
             .join(User, FriendRequest.sender_id == User.id)
-            .with_entities(
-                User.username.label('username'),
-                User.email.label('email'),
-                FriendRequest.sender_id.label('from_id')
-            )
+            .add_columns(User)
             .all()
         )
-        return render_template('friends/list.html', requests=pending_requests)
+        # Transform the results to include the from_id
+        requests = []
+        for request, user in pending_requests:
+            user.from_id = request.sender_id  # Add sender_id to user object
+            requests.append(user)
+            
+        return render_template('friends/list.html', requests=requests)
     except Exception as e:
         flash("An error occurred while loading friend requests.", "error")
         return redirect(url_for('dashboard.dashboard'))

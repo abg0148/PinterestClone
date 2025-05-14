@@ -1,0 +1,112 @@
+{% extends "base_authenticated.html" %}
+{% from "components/pin_tile.html" import pin_tile, pin_tile_styles %}
+
+{% block title %}{{ board.board_name }}{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .board-header {
+        margin-bottom: 32px;
+    }
+
+    .board-title {
+        font-size: 32px;
+        font-weight: 600;
+        margin: 0 0 8px;
+    }
+
+    .board-description {
+        color: #666;
+        margin: 0 0 16px;
+    }
+
+    .board-meta {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        color: #666;
+        font-size: 14px;
+    }
+
+    .board-owner {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .owner-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .board-actions {
+        margin-top: 16px;
+    }
+
+    .board-button {
+        padding: 8px 16px;
+        border-radius: 20px;
+        border: none;
+        font-size: 14px;
+        cursor: pointer;
+        margin-right: 8px;
+    }
+
+    .primary-button {
+        background-color: #e60023;
+        color: white;
+    }
+
+    .secondary-button {
+        background-color: #efefef;
+        color: #333;
+    }
+</style>
+{{ pin_tile_styles() }}
+{% endblock %}
+
+{% block content %}
+<div class="board-header">
+    <h1 class="board-title">{{ board.board_name }}</h1>
+    {% if board.description %}
+        <p class="board-description">{{ board.description }}</p>
+    {% endif %}
+    
+    <div class="board-meta">
+        <div class="board-owner">
+            <img src="{{ url_for('profile.profile_picture', user_id=board.user_id) }}" 
+                 alt="{{ board.user.username }}'s picture"
+                 class="owner-avatar">
+            <span>{{ board.user.username }}</span>
+        </div>
+        <div class="board-privacy">
+            {% if board.allow_public_comments %}
+                <span>Public Comments</span>
+            {% else %}
+                <span>Friends Only Comments</span>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if board.user_id == current_user.id %}
+    <div class="board-actions">
+        <a href="{{ url_for('boards.edit_board', board_id=board.id) }}" class="board-button secondary-button">Edit Board</a>
+        <form method="POST" action="{{ url_for('boards.delete_board', board_id=board.id) }}" style="display: inline;">
+            <button type="submit" class="board-button secondary-button" onclick="return confirm('Are you sure you want to delete this board?')">Delete Board</button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+
+{% if pins %}
+    <div class="pins-grid">
+        {% for pin in pins %}
+            {{ pin_tile(pin.post, pin, board.user) }}
+        {% endfor %}
+    </div>
+{% else %}
+    <p>No pins in this board yet.</p>
+{% endif %}
+{% endblock %} 

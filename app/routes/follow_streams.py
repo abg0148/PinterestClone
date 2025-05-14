@@ -171,8 +171,6 @@ def add_board_to_stream(board_id):
     """Add a board to a stream from the board view."""
     stream_id = request.form.get('stream_id', type=int)
     
-    print(f"Attempting to add board {board_id} to stream {stream_id}")
-    
     if not stream_id:
         flash("Please select a stream.", "error")
         return redirect(url_for('boards.view_board', board_id=board_id))
@@ -184,12 +182,8 @@ def add_board_to_stream(board_id):
         terminated_at=None
     ).first_or_404()
     
-    print(f"Found stream: {stream.stream_name}")
-    
     # Verify board exists
     board = Board.query.filter_by(id=board_id, terminated_at=None).first_or_404()
-    
-    print(f"Found board: {board.board_name}")
     
     try:
         # Check if already in stream (and not deleted)
@@ -204,39 +198,36 @@ def add_board_to_stream(board_id):
         )
         
         if existing:
-            print(f"Board already in stream")
-            flash("This board is already in the stream.", "error")
+            flash("This board is already in the selected stream.", "info")
         else:
-            print(f"Adding board to stream")
-            # Check for soft-deleted entry
-            soft_deleted = (
+            # Check if it was previously deleted and reactivate it
+            deleted = (
                 FollowStreamBoard.query
                 .filter_by(
                     stream_id=stream_id,
                     board_id=board_id
                 )
+                .filter(FollowStreamBoard.deleted_at != None)
                 .first()
             )
             
-            if soft_deleted:
-                # Reactivate the existing record
-                soft_deleted.deleted_at = None
-                print(f"Reactivating previously deleted board")
+            if deleted:
+                deleted.deleted_at = None
+                flash("Board added back to stream.", "success")
             else:
-                # Create new record
-                soft_deleted = FollowStreamBoard(
+                # Create new association
+                stream_board = FollowStreamBoard(
                     stream_id=stream_id,
                     board_id=board_id
                 )
-                db.session.add(soft_deleted)
+                db.session.add(stream_board)
+                flash("Board added to stream successfully!", "success")
             
             db.session.commit()
-            print(f"Successfully added board to stream")
-            flash("Board added to stream!", "success")
-    
+            
     except Exception as e:
         db.session.rollback()
-        print(f"Error adding board to stream: {str(e)}")
         flash("Error adding board to stream.", "error")
+        print(f"Error adding board to stream: {str(e)}")
     
     return redirect(url_for('boards.view_board', board_id=board_id)) 
