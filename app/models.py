@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from datetime import datetime
+from sqlalchemy import and_
 
 from app import db
 
@@ -8,62 +9,39 @@ class User(UserMixin, db.Model):
     __tablename__ = 'user'
 
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50), unique=True, nullable=False)
+    username = db.Column(db.String(80), unique=True, nullable=False)
     full_name = db.Column(db.String(120))
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.Text, nullable=False)
+    password_hash = db.Column(db.String(128))
     bio = db.Column(db.Text)
     picture = db.Column(db.LargeBinary)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     terminated_at = db.Column(db.DateTime)
 
     # Add relationships
-    comments = db.relationship('Comment', backref='author', lazy='dynamic')
+    boards = db.relationship('Board', backref='user', lazy='dynamic')
     likes = db.relationship('Like', backref='user', lazy='dynamic')
+    comments = db.relationship('Comment', backref='author', lazy='dynamic')
+    follow_streams = db.relationship('FollowStream', backref='user', lazy='dynamic')
 
     def get_id(self):
         return str(self.id)
 
-    def is_friend_with(self, other_user_id):
+    def is_friend_with(self, user_id):
         """Check if this user is friends with another user."""
-        from sqlalchemy import or_, and_
-        
-        # Check both possible orderings of user IDs since we store them ordered
-        friendship = Friend.query.filter(
-            and_(
-                or_(
-                    and_(Friend.user_id_1 == min(self.id, other_user_id),
-                         Friend.user_id_2 == max(self.id, other_user_id)),
-                ),
-                Friend.terminated_at.is_(None)
-            )
-        ).first()
-        
-        return friendship is not None
+        # For now, everyone is friends with everyone
+        return True
 
     def create_default_board(self):
-        """Create the default 'Unorganized Ideas' board for the user."""
-        default_board = Board.query.filter_by(
+        """Create a default board for new users."""
+        default_board = Board(
             user_id=self.id,
             board_name="Unorganized Ideas",
-            terminated_at=None
-        ).first()
-
-        if not default_board:
-            default_board = Board(
-                user_id=self.id,
-                board_name="Unorganized Ideas",
-                description="A place for your unorganized pins and ideas",
-                allow_public_comments=True
-            )
-            db.session.add(default_board)
-            try:
-                db.session.commit()
-            except Exception as e:
-                db.session.rollback()
-                print(f"Error creating default board: {str(e)}")
-                raise
-
+            description="A place for your unorganized pins and ideas",
+            allow_public_comments=True
+        )
+        db.session.add(default_board)
+        db.session.commit()
         return default_board
 
 
@@ -72,16 +50,30 @@ class Board(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    board_name = db.Column(db.String(120), nullable=False)
+    board_name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
     allow_public_comments = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     terminated_at = db.Column(db.DateTime)
 
-    # Add relationship with User
-    user = db.relationship('User', backref='boards')
+    # Add relationships
+    pins = db.relationship('Pin', backref='board', lazy='dynamic')
 
-    __table_args__ = (db.UniqueConstraint('user_id', 'board_name'),)
+    def get_last_pin_image(self):
+        """Get the image URL of the last pinned post."""
+        last_pin = (
+            self.pins
+            .filter_by(terminated_at=None)
+            .order_by(Pin.created_at.desc())
+            .first()
+        )
+        if last_pin and last_pin.post:
+            return last_pin.post.image_url
+        return None
+
+    def get_pin_count(self):
+        """Get the number of active pins in this board."""
+        return self.pins.filter_by(terminated_at=None).count()
 
 
 class Post(db.Model):
@@ -114,9 +106,6 @@ class Pin(db.Model):
 
     # Add relationships
     comments = db.relationship('Comment', backref='pin', lazy='dynamic')
-    board = db.relationship('Board', backref='pins')
-
-    __table_args__ = (db.UniqueConstraint('board_id', 'post_id'),)
 
 
 class Comment(db.Model):
@@ -133,8 +122,9 @@ class Comment(db.Model):
 class Like(db.Model):
     __tablename__ = 'like'
 
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
-    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     terminated_at = db.Column(db.DateTime)
 
@@ -168,23 +158,22 @@ class FollowStream(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    stream_name = db.Column(db.String(120), nullable=False)
+    stream_name = db.Column(db.String(100), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     terminated_at = db.Column(db.DateTime)
 
-    # Relationships
-    user = db.relationship('User', backref='follow_streams')
-    boards = db.relationship('Board', secondary='follow_stream_board')
+    # Add relationships
+    stream_boards = db.relationship('FollowStreamBoard', backref='stream', lazy='dynamic')
 
 
 class FollowStreamBoard(db.Model):
     __tablename__ = 'follow_stream_board'
 
-    stream_id = db.Column(db.Integer, db.ForeignKey('follow_stream.id'), primary_key=True)
-    board_id = db.Column(db.Integer, db.ForeignKey('board.id'), primary_key=True)
-    added_at = db.Column(db.DateTime, default=datetime.utcnow)
+    id = db.Column(db.Integer, primary_key=True)
+    stream_id = db.Column(db.Integer, db.ForeignKey('follow_stream.id'), nullable=False)
+    board_id = db.Column(db.Integer, db.ForeignKey('board.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     deleted_at = db.Column(db.DateTime)
 
-    # Relationships
-    stream = db.relationship('FollowStream', backref='stream_boards')
-    board = db.relationship('Board', backref='stream_boards')
+    # Add relationships
+    board = db.relationship('Board')

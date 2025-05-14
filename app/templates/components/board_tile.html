@@ -1,0 +1,93 @@
+{% macro board_tile(board) %}
+<a href="{{ url_for('boards.view_board', board_id=board.id) }}" class="board-tile">
+    <div class="board-image-container">
+        {% set last_pin_image = board.get_last_pin_image() %}
+        {% if last_pin_image %}
+            <img src="{{ last_pin_image }}" alt="{{ board.board_name }}" class="board-image">
+        {% else %}
+            <div class="empty-board">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <path d="M12 8v8M8 12h8"></path>
+                </svg>
+            </div>
+        {% endif %}
+    </div>
+    <div class="board-info">
+        <h3 class="board-name">{{ board.board_name }}</h3>
+        <p class="pin-count">{{ board.get_pin_count() }} pins</p>
+    </div>
+</a>
+{% endmacro %}
+
+{% macro board_tile_styles() %}
+<style>
+    .boards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 24px;
+        padding: 16px;
+    }
+
+    .board-tile {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+        border-radius: 16px;
+        overflow: hidden;
+        background: var(--card-background);
+        box-shadow: var(--shadow-sm);
+        transition: all 0.2s ease;
+    }
+
+    .board-tile:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .board-image-container {
+        position: relative;
+        padding-bottom: 100%;
+        background: var(--background-secondary);
+    }
+
+    .board-image {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .empty-board {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-secondary);
+        background: var(--background-secondary);
+    }
+
+    .board-info {
+        padding: 16px;
+    }
+
+    .board-name {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0 0 4px;
+        color: var(--text-primary);
+    }
+
+    .pin-count {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+</style>
+{% endmacro %} 

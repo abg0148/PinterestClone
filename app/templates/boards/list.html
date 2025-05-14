@@ -1,4 +1,6 @@
 {% extends "base_authenticated.html" %}
+{% from "components/board_tile.html" import board_tile, board_tile_styles %}
+
 {% block title %}My Boards{% endblock %}
 
 {% block extra_styles %}
@@ -19,12 +21,12 @@
     .boards-title {
         font-size: 32px;
         font-weight: 600;
-        color: #333;
+        color: var(--text-primary);
         margin: 0;
     }
 
     .create-board-button {
-        background-color: #e60023;
+        background-color: var(--primary-color);
         color: white;
         border: none;
         border-radius: 24px;
@@ -32,11 +34,15 @@
         font-size: 16px;
         font-weight: 500;
         text-decoration: none;
-        transition: background-color 0.2s ease;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
     }
 
     .create-board-button:hover {
-        background-color: #d50021;
+        background-color: var(--primary-hover);
+        transform: translateY(-1px);
     }
 
     .boards-grid {
@@ -108,39 +114,30 @@
 
     .empty-message {
         text-align: center;
-        color: #666;
+        color: var(--text-secondary);
         font-size: 16px;
         margin-top: 48px;
     }
 </style>
+{{ board_tile_styles() }}
 {% endblock %}
 
 {% block content %}
 <div class="boards-container">
     <div class="boards-header">
         <h1 class="boards-title">My Boards</h1>
-        <a href="{{ url_for('boards.create_board') }}" class="create-board-button">Create board</a>
+        <a href="{{ url_for('boards.create_board') }}" class="create-board-button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Create board
+        </a>
     </div>
 
     {% if boards %}
         <div class="boards-grid">
             {% for board in boards %}
-                <div class="board-card">
-                    <a href="{{ url_for('boards.view_board', board_id=board.id) }}" class="board-name">
-                        {{ board.board_name }}
-                    </a>
-                    {% if board.description %}
-                        <p class="board-description">{{ board.description }}</p>
-                    {% endif %}
-                    <div class="board-meta">
-                        <div class="board-privacy">
-                            <span>{{ 'Public' if board.allow_public_comments else 'Friends Only' }} comments</span>
-                        </div>
-                        <div class="board-actions">
-                            <a href="{{ url_for('boards.edit_board', board_id=board.id) }}" class="board-action-link">Edit</a>
-                        </div>
-                    </div>
-                </div>
+                {{ board_tile(board) }}
             {% endfor %}
         </div>
     {% else %}

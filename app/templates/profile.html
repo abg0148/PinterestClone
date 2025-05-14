@@ -1,4 +1,5 @@
 {% extends "base_authenticated.html" %}
+{% from "components/board_tile.html" import board_tile, board_tile_styles %}
 
 {% block title %}
     {% if user.id == current_user.id %}
@@ -48,7 +49,7 @@
 
     .profile-username {
         font-size: 18px;
-        color: #666;
+        color: var(--text-secondary);
         margin-bottom: 24px;
     }
 
@@ -56,7 +57,7 @@
         font-size: 16px;
         line-height: 1.5;
         margin-bottom: 24px;
-        color: #333;
+        color: var(--text-primary);
     }
 
     .profile-actions {
@@ -75,115 +76,46 @@
     }
 
     .primary-button {
-        background-color: #e60023;
+        background-color: var(--primary-color);
         color: white;
     }
 
     .secondary-button {
         background-color: #efefef;
-        color: #333;
+        color: var(--text-primary);
     }
 
     .boards-section {
         margin-top: 48px;
     }
 
-    .boards-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: 24px;
-        margin-top: 24px;
-    }
-
-    .board-card {
-        background: white;
-        border-radius: 16px;
-        padding: 24px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .board-title {
-        font-size: 20px;
+    .boards-section h2 {
+        font-size: 24px;
         font-weight: 600;
-        margin-bottom: 16px;
-        color: #333;
-        text-decoration: none;
-        display: block;
-    }
-
-    .board-title:hover {
-        color: #e60023;
-    }
-
-    .board-description {
-        color: #666;
-        font-size: 14px;
-        line-height: 1.5;
-    }
-
-    .board-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 14px;
-        color: #666;
+        color: var(--text-primary);
+        margin-bottom: 24px;
     }
 </style>
+{{ board_tile_styles() }}
 {% endblock %}
 
 {% block content %}
 <div class="profile-container">
     <div class="profile-header">
         <div class="profile-picture">
-            <img src="{{ url_for('profile.profile_picture', user_id=user.id) }}" alt="Profile Picture">
+            <img src="{{ url_for('profile.profile_picture', user_id=user.id) }}" alt="{{ user.username }}'s picture">
         </div>
-        
         <div class="profile-info">
-            <h1 class="profile-name">{{ user.full_name or user.username }}</h1>
-            {% if user.full_name %}
-                <p class="profile-username">{{ user.username }}</p>
+            <h1 class="profile-name">{{ user.username }}</h1>
+            <p class="profile-username">@{{ user.username }}</p>
+            {% if user.bio %}
+                <p class="profile-bio">{{ user.bio }}</p>
             {% endif %}
-            <p class="profile-bio">{{ user.bio or 'No bio yet.' }}</p>
-            
-            <div class="profile-actions">
-                {% if user.id == current_user.id %}
+            {% if user.id == current_user.id %}
+                <div class="profile-actions">
                     <a href="{{ url_for('profile.edit_profile') }}" class="profile-button secondary-button">Edit Profile</a>
-                {% else %}
-                    <div class="friend-actions">
-                        {% if friendship_status == 'not_friends' %}
-                            <form method="POST" action="{{ url_for('friends.add_friend') }}" style="display: inline;">
-                                <input type="hidden" name="target_id" value="{{ user.id }}">
-                                <button type="submit" class="profile-button primary-button">Add Friend</button>
-                            </form>
-                        {% elif friendship_status == 'pending_sent' %}
-                            <button class="profile-button secondary-button" disabled>Friend Request Sent</button>
-                        {% elif friendship_status == 'pending_received' %}
-                            <form method="POST" action="{{ url_for('friends.friend_request_response') }}" style="display: inline;">
-                                <input type="hidden" name="from_id" value="{{ user.id }}">
-                                <input type="hidden" name="to_id" value="{{ current_user.id }}">
-                                <input type="hidden" name="response" value="accepted">
-                                <button type="submit" class="profile-button primary-button">Accept Friend Request</button>
-                            </form>
-                            <form method="POST" action="{{ url_for('friends.friend_request_response') }}" style="display: inline;">
-                                <input type="hidden" name="from_id" value="{{ user.id }}">
-                                <input type="hidden" name="to_id" value="{{ current_user.id }}">
-                                <input type="hidden" name="response" value="declined">
-                                <button type="submit" class="profile-button secondary-button">Reject</button>
-                            </form>
-                        {% elif friendship_status == 'friends' %}
-                            <button class="profile-button secondary-button" disabled>Friends</button>
-                        {% endif %}
-                    </div>
-                {% endif %}
-                
-                <a href="{{ url_for('profile.view_friends', user_id=user.id) }}" class="profile-button secondary-button">
-                    {% if user.id == current_user.id %}
-                        My Friends
-                    {% else %}
-                        {{ user.username }}'s Friends
-                    {% endif %}
-                </a>
-            </div>
+                </div>
+            {% endif %}
         </div>
     </div>
 
@@ -199,14 +131,7 @@
         {% if boards %}
             <div class="boards-grid">
                 {% for board in boards %}
-                    <div class="board-card">
-                        <a href="{{ url_for('boards.view_board', board_id=board.id) }}" class="board-title">
-                            {{ board.board_name }}
-                        </a>
-                        {% if board.description %}
-                            <p class="board-description">{{ board.description }}</p>
-                        {% endif %}
-                    </div>
+                    {{ board_tile(board) }}
                 {% endfor %}
             </div>
         {% else %}
